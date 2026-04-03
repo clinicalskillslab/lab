@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CN Palsy Simulator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080c10;
+    --surface: #0f1520;
+    --surface2: #141c28;
+    --border: #1e2a3a;
+    --border2: #263348;
+    --text: #dce8f5;
+    --muted: #5a7290;
+    --accent: #4a9eff;
+    --accent2: #2dd4bf;
+    --correct: #22c55e;
+    --wrong: #ef4444;
+    --gold: #f59e0b;
+  }
+
+  html, body {
+    width: 100%; min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    cursor: none;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(74,158,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,158,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .finger-cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    font-size: 28px;
+    transform: translate(-8px, -4px) rotate(-20deg);
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+    transition: transform 0.06s ease;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; }
+  .screen.active { display: flex; }
+
+  /* ── INTRO ── */
+  #screen-intro {
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 40px 20px;
+    position: relative; z-index: 1;
+  }
+
+  .intro-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(74,158,255,0.25);
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(74,158,255,0.06);
+  }
+
+  .intro-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    text-align: center;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .intro-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .intro-desc {
+    max-width: 520px;
+    text-align: center;
+    color: var(--muted);
+    font-weight: 300;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .scenarios-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    max-width: 600px;
+    width: 100%;
+  }
+  .scenario-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+  .scenario-chip span {
+    display: block;
+    font-size: 0.62rem;
+    color: var(--accent);
+    margin-bottom: 4px;
+    letter-spacing: 0.1em;
+  }
+
+  .btn-start {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 16px 48px;
+    border-radius: 8px;
+    cursor: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-start::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.2s;
+  }
+  .btn-start:hover::after { background: rgba(255,255,255,0.12); }
+  .btn-start:active { transform: scale(0.97); }
+
+  /* ── GAME ── */
+  #screen-game {
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px 40px;
+    gap: 0;
+    position: relative; z-index: 1;
+  }
+
+  .game-header {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .game-title-block h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .game-title-block p {
+    font-size: 0.7rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .score-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.25);
+    padding: 8px 20px;
+    border-radius: 6px;
+  }
+
+  /* Progress */
+  .progress-row {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .progress-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .progress-bar-bg {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .round-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .round-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border2);
+    transition: all 0.3s;
+  }
+  .round-dot.done { background: var(--accent2); }
+  .round-dot.correct { background: var(--correct); }
+  .round-dot.wrong { background: var(--wrong); }
+  .round-dot.current { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+  /* Eye panel */
+  .eye-panel {
+    width: 100%;
+    max-width: 860px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .eye-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+    opacity: 0.4;
+  }
+
+  .eyes-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+
+  .eye-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .eye-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .eye-socket {
+    position: relative;
+    width: 200px;
+    height: 128px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px var(--border),
+      0 8px 32px rgba(0,0,0,0.7),
+      inset 0 2px 8px rgba(0,0,0,0.5);
+  }
+
+  .eye-socket canvas {
+    display: block;
+    width: 200px;
+    height: 128px;
+  }
+
+  .gaze-hint {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-align: center;
+    padding: 8px 0 0;
+    opacity: 0.6;
+    text-transform: uppercase;
+  }
+
+  /* Question panel */
+  .question-panel {
+    width: 100%;
+    max-width: 860px;
+    margin-bottom: 14px;
+  }
+
+  .question-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .answers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .answer-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    cursor: none;
+    transition: all 0.18s;
+    text-align: left;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 400;
+    position: relative;
+    overflow: hidden;
+  }
+  .answer-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+  .answer-btn:hover:not(:disabled)::before { opacity: 0.05; }
+  .answer-btn:hover:not(:disabled) {
+    border-color: var(--border2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .answer-btn:disabled { cursor: not-allowed; }
+
+  .answer-key {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.18s;
+    position: relative; z-index: 1;
+  }
+
+  .answer-text { position: relative; z-index: 1; }
+
+  .answer-btn.correct-choice {
+    background: rgba(34,197,94,0.1);
+    border-color: var(--correct);
+    color: #86efac;
+  }
+  .answer-btn.correct-choice .answer-key {
+    background: var(--correct);
+    border-color: var(--correct);
+    color: #000;
+  }
+  .answer-btn.wrong-choice {
+    background: rgba(239,68,68,0.1);
+    border-color: var(--wrong);
+    color: #fca5a5;
+  }
+  .answer-btn.wrong-choice .answer-key {
+    background: var(--wrong);
+    border-color: var(--wrong);
+    color: #fff;
+  }
+
+  /* Feedback */
+  .feedback-panel {
+    width: 100%;
+    max-width: 860px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    display: none;
+    margin-bottom: 12px;
+    animation: slideUp 0.3s ease;
+  }
+  .feedback-panel.visible { display: block; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .feedback-header {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+  }
+  .feedback-header.correct { color: var(--correct); }
+  .feedback-header.correct::before { content: '✓ '; }
+  .feedback-header.wrong { color: var(--wrong); }
+  .feedback-header.wrong::before { content: '✗ '; }
+
+  .feedback-body {
+    font-size: 0.83rem;
+    line-height: 1.65;
+    color: var(--muted);
+    font-weight: 300;
+  }
+  .feedback-body strong { color: var(--text); font-weight: 500; }
+
+  .next-btn {
+    display: block;
+    margin: 12px 0 0 auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 11px 28px;
+    border-radius: 7px;
+    cursor: none;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .next-btn:hover { background: #6db3ff; }
+  .next-btn:active { transform: scale(0.97); }
+
+  /* ── RESULTS ── */
+  #screen-results {
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 40px 20px;
+    position: relative; z-index: 1;
+  }
+
+  .results-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    text-align: center;
+    letter-spacing: -0.01em;
+  }
+
+  .results-score-ring {
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative;
+  }
+  .results-score-ring::after {
+    content: '';
+    position: absolute; inset: 6px;
+    border-radius: 50%;
+    border: 2px solid rgba(74,158,255,0.2);
+  }
+  .results-score-big {
+    font-family: 'DM Serif Display', serif;
+    font-size: 3.2rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .results-score-denom {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+  }
+
+  .results-breakdown {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .result-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 16px;
+    font-size: 0.83rem;
+  }
+  .result-row-name { color: var(--text); }
+  .result-row-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .result-row-badge.c { background: rgba(34,197,94,0.15); color: var(--correct); border: 1px solid rgba(34,197,94,0.3); }
+  .result-row-badge.w { background: rgba(239,68,68,0.15); color: var(--wrong); border: 1px solid rgba(239,68,68,0.3); }
+
+  .results-msg {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .btn-restart {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 13px 36px;
+    border-radius: 8px;
+    cursor: none;
+    transition: all 0.2s;
+  }
+  .btn-restart:hover { background: rgba(74,158,255,0.1); }
+</style>
+</head>
+<body>
+
+<div class="finger-cursor" id="cursor">☝️</div>
+
+<!-- ══════════════════════════════════════
+     INTRO SCREEN
+═══════════════════════════════════════════ -->
+<div class="screen active" id="screen-intro">
+  <div class="intro-badge">Clinical Skills · Neuro-Ophthalmology</div>
+  <h1 class="intro-title">CN Palsy<br><em>Simulator</em></h1>
+  <p class="intro-desc">
+    Move the cursor across the screen to examine the patient's eye movements.
+    Identify the cranial nerve palsy — or lack thereof — from the gaze pattern.
+    8 rounds, all classic presentations.
+  </p>
+  <div class="scenarios-grid">
+    <div class="scenario-chip"><span>CN III</span>Right Palsy</div>
+    <div class="scenario-chip"><span>CN III</span>Left Palsy</div>
+    <div class="scenario-chip"><span>CN IV</span>Right Palsy</div>
+    <div class="scenario-chip"><span>CN IV</span>Left Palsy</div>
+    <div class="scenario-chip"><span>CN VI</span>Right Palsy</div>
+    <div class="scenario-chip"><span>CN VI</span>Left Palsy</div>
+    <div class="scenario-chip"><span>INO</span>Right-sided</div>
+    <div class="scenario-chip"><span>Normal</span>Conjugate</div>
+  </div>
+  <button class="btn-start" id="btn-start">Begin Examination →</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     GAME SCREEN
+═══════════════════════════════════════════ -->
+<div class="screen" id="screen-game">
+
+  <div class="game-header">
+    <div class="game-title-block">
+      <h2>CN Palsy Simulator</h2>
+      <p>Observer's Perspective — Follow the Finger</p>
+    </div>
+    <div class="score-badge" id="score-display">Score: 0</div>
+  </div>
+
+  <div class="progress-row">
+    <span class="progress-text" id="round-text">Round 1 of 8</span>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill" style="width:12.5%"></div>
+    </div>
+    <div class="round-dots" id="round-dots"></div>
+  </div>
+
+  <div class="eye-panel">
+    <div class="eyes-row">
+      <div class="eye-unit">
+        <span class="eye-label">Patient's Right Eye</span>
+        <div class="eye-socket">
+          <canvas id="eyeR" width="400" height="256"></canvas>
+        </div>
+      </div>
+      <div class="eye-unit">
+        <span class="eye-label">Patient's Left Eye</span>
+        <div class="eye-socket">
+          <canvas id="eyeL" width="400" height="256"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="gaze-hint">Move cursor to examine gaze in all directions</div>
+  </div>
+
+  <div class="question-panel">
+    <div class="question-label">What is the diagnosis?</div>
+    <div class="answers-grid" id="answers-grid"></div>
+  </div>
+
+  <div class="feedback-panel" id="feedback-panel">
+    <div class="feedback-header" id="feedback-header"></div>
+    <div class="feedback-body" id="feedback-body"></div>
+    <button class="next-btn" id="next-btn">Next Case →</button>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     RESULTS SCREEN
+═══════════════════════════════════════════ -->
+<div class="screen" id="screen-results">
+  <div class="results-title" id="results-title">Examination Complete</div>
+  <div class="results-score-ring">
+    <div class="results-score-big" id="results-score">0</div>
+    <div class="results-score-denom">out of 8</div>
+  </div>
+  <div class="results-breakdown" id="results-breakdown"></div>
+  <p class="results-msg" id="results-msg"></p>
+  <button class="btn-restart" id="btn-restart">Restart Examination</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ════════════════════════════════════════════════════════
+const canvasR = document.getElementById('eyeR');
+const canvasL = document.getElementById('eyeL');
+const ctxR = canvasR.getContext('2d');
+const ctxL = canvasL.getContext('2d');
+
+const W = 400, H = 256, CX = W/2, CY = H/2;
+const MAX_X = 80, MAX_Y = 38;
+
+// ════════════════════════════════════════════════════════
+//  SCENARIOS
+//  gazeR/gazeL: functions (nx, ny) → {x, y} offset in canvas units
+//  nx, ny ∈ [-1, 1] normalised mouse position
+//  Positive x = iris moves RIGHT (patient's gaze right)
+//  Positive y = iris moves DOWN
+// ════════════════════════════════════════════════════════
+const SCENARIOS = [
+  {
+    id: 'normal',
+    name: 'Normal Eye Movements',
+    description: `<strong>Normal conjugate gaze</strong> — both eyes move together symmetrically in all directions, driven by the conjugate gaze centres in the frontal lobe (FEF) and brainstem PPRF. No limitation is seen in any direction of gaze.`,
+    gazeR: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+    gazeL: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+  },
+  {
+    id: 'cn6_right',
+    name: 'Right CN 6 Palsy',
+    description: `<strong>Right CN VI (abducens) palsy</strong> — the right lateral rectus is paralysed. The right eye cannot abduct past the midline. On attempted right gaze, the right eye stays central while the left adducts normally. At rest there may be a slight esotropia of the right eye due to unopposed medial rectus action.`,
+    gazeR: (nx, ny) => {
+      const gy = Math.tanh(ny*2.2)*MAX_Y;
+      // Right eye abducts by moving LEFT (negative x from observer's view).
+      // CN6 right = lateral rectus paralysed = cannot abduct = iris stuck near centre on left gaze (nx < 0).
+      // Also resting slight esotropia: bias toward +x (adducted).
+      const esoBias = 6;
+      const gx = nx < 0
+        ? Math.tanh(nx*2.2)*MAX_X * 0.08 + esoBias  // abduction blocked
+        : Math.tanh(nx*2.2)*MAX_X + esoBias;          // adduction (moves right) normal
+      return { x: gx, y: gy };
+    },
+    gazeL: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+  },
+  {
+    id: 'cn6_left',
+    name: 'Left CN 6 Palsy',
+    description: `<strong>Left CN VI (abducens) palsy</strong> — the left lateral rectus is paralysed. The left eye cannot abduct (cannot move to the left). On attempted left gaze, the left eye stays near centre while the right adducts normally. Resting esotropia of the left eye may be present.`,
+    gazeR: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+    gazeL: (nx, ny) => {
+      const gy = Math.tanh(ny*2.2)*MAX_Y;
+      // Left eye abducts by moving RIGHT (positive x from observer's view).
+      // CN6 left = lateral rectus paralysed = cannot abduct = iris stuck near centre on right gaze (nx > 0).
+      // Resting esotropia: bias toward -x (adducted).
+      const esoBias = -6;
+      const gx = nx > 0
+        ? Math.tanh(nx*2.2)*MAX_X * 0.08 + esoBias  // abduction blocked
+        : Math.tanh(nx*2.2)*MAX_X + esoBias;          // adduction normal
+      return { x: gx, y: gy };
+    },
+  },
+  {
+    id: 'cn3_right',
+    name: 'Right CN 3 Palsy',
+    description: `<strong>Right CN III (oculomotor) palsy</strong> — paralysis of SR, IR, MR, and IO, plus ptosis and a dilated unreactive pupil. The right eye rests in a <em>down-and-out</em> position due to unopposed action of the lateral rectus (CN VI) and superior oblique (CN IV). Adduction, elevation, and depression are all absent or severely limited.`,
+    gazeR: (nx, ny) => {
+      // Right eye stuck mostly down-out; very limited movement
+      return {
+        x: MAX_X * 0.55 + Math.tanh(nx*2.2)*MAX_X*0.1,
+        y: MAX_Y * 0.7 + Math.tanh(ny*2.2)*MAX_Y*0.1
+      };
+    },
+    gazeL: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+    ptosisR: true,
+    pupilR: 'dilated',
+  },
+  {
+    id: 'cn3_left',
+    name: 'Left CN 3 Palsy',
+    description: `<strong>Left CN III (oculomotor) palsy</strong> — the left eye rests <em>down and out</em>. Ptosis, a dilated unreactive pupil, and absence of adduction, elevation, and depression characterise this presentation. CN VI and CN IV are intact.`,
+    gazeR: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+    gazeL: (nx, ny) => {
+      return {
+        x: -MAX_X * 0.55 + Math.tanh(nx*2.2)*MAX_X*0.1,
+        y: MAX_Y * 0.7 + Math.tanh(ny*2.2)*MAX_Y*0.1
+      };
+    },
+    ptosisL: true,
+    pupilL: 'dilated',
+  },
+  {
+    id: 'cn4_right',
+    name: 'Right CN 4 Palsy',
+    description: `<strong>Right CN IV (trochlear) palsy</strong> — the right superior oblique is paralysed, causing right hypertropia (the right eye drifts upward). The vertical deviation worsens on <em>left</em> gaze (where SO acts most) and on right head tilt. Patients often adopt a compensatory left head tilt to reduce diplopia.`,
+    gazeR: (nx, ny) => {
+      const gx = Math.tanh(nx*2.2)*MAX_X;
+      // Right eye: drifts up (negative y), especially on left gaze (negative nx)
+      const upDrift = -MAX_Y * 0.55 * (nx < 0 ? 1.0 : 0.3);
+      const gy = Math.tanh(ny*2.2)*MAX_Y * 0.4 + upDrift;
+      return { x: gx, y: gy };
+    },
+    gazeL: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+  },
+  {
+    id: 'cn4_left',
+    name: 'Left CN 4 Palsy',
+    description: `<strong>Left CN IV (trochlear) palsy</strong> — the left superior oblique is paralysed. The left eye drifts upward (left hypertropia), worsening on right gaze and on left head tilt. Head tilt to the right is the classic compensatory posture.`,
+    gazeR: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+    gazeL: (nx, ny) => {
+      const gx = Math.tanh(nx*2.2)*MAX_X;
+      // Left eye drifts up, worse on right gaze (positive nx)
+      const upDrift = -MAX_Y * 0.55 * (nx > 0 ? 1.0 : 0.3);
+      const gy = Math.tanh(ny*2.2)*MAX_Y * 0.4 + upDrift;
+      return { x: gx, y: gy };
+    },
+  },
+  {
+    id: 'ino_right',
+    name: 'Internuclear Ophthalmoplegia',
+    description: `<strong>Right-sided INO (internuclear ophthalmoplegia)</strong> — a lesion of the <em>right MLF</em> (medial longitudinal fasciculus) disconnects the right CN III nucleus from the left CN VI nucleus. On <em>right</em> gaze, the right eye fails to adduct (cannot move right) while the left eye abducts normally — often with abducting nystagmus. Left gaze and vertical movements are preserved. Most commonly caused by MS or brainstem infarct.`,
+    gazeR: (nx, ny) => {
+      const gy = Math.tanh(ny*2.2)*MAX_Y;
+      // Right eye: adduction = iris moves RIGHT (positive x). This is blocked on right gaze (nx > 0).
+      const gx = nx > 0
+        ? Math.tanh(nx*2.2)*MAX_X * 0.08  // adduction impaired
+        : Math.tanh(nx*2.2)*MAX_X;          // abduction (left gaze) normal
+      return { x: gx, y: gy };
+    },
+    gazeL: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+    // Left eye abducts (moves right/positive x) on right gaze — nystagmus there
+    inoNystagmusLeft: true,
+  },
+];
+
+const ANSWER_OPTIONS = [
+  'Normal Eye Movements',
+  'Left CN 6 Palsy',
+  'Right CN 6 Palsy',
+  'Left CN 3 Palsy',
+  'Right CN 3 Palsy',
+  'Left CN 4 Palsy',
+  'Right CN 4 Palsy',
+  'Internuclear Ophthalmoplegia',
+];
+const ANSWER_KEYS = ['A','B','C','D','E','F','G','H'];
+
+// ════════════════════════════════════════════════════════
+//  GAME STATE
+// ════════════════════════════════════════════════════════
+let gameState = {
+  order: [],
+  round: 0,
+  score: 0,
+  answered: false,
+  results: [],
+  mouse: { x: window.innerWidth/2, y: window.innerHeight/2 },
+  gazeR: { x: 0, y: 0 },
+  gazeL: { x: 0, y: 0 },
+  targetR: { x: 0, y: 0 },
+  targetL: { x: 0, y: 0 },
+  nystagmusPhase: 0,
+};
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// ════════════════════════════════════════════════════════
+//  DRAW ENGINE
+// ════════════════════════════════════════════════════════
+function irisGradient(ctx, ix, iy, r) {
+  const g = ctx.createRadialGradient(ix-r*0.2, iy-r*0.2, r*0.05, ix, iy, r);
+  g.addColorStop(0, '#7ca8c0');
+  g.addColorStop(0.4, '#4e7fa0');
+  g.addColorStop(0.75, '#2e5870');
+  g.addColorStop(1, '#1a3a50');
+  return g;
+}
+
+function cubicBezier(t, p0, p1, p2, p3) {
+  const mt = 1-t;
+  return mt*mt*mt*p0 + 3*mt*mt*t*p1 + 3*mt*t*t*p2 + t*t*t*p3;
+}
+function cubicBezierDeriv(t, p0, p1, p2, p3) {
+  const mt = 1-t;
+  return 3*(mt*mt*(p1-p0) + 2*mt*t*(p2-p1) + t*t*(p3-p2));
+}
+
+function drawEye(ctx, gazeX, gazeY, opts = {}) {
+  const { ptosis = false, dilated = false, nystagmus = 0 } = opts;
+  ctx.clearRect(0, 0, W, H);
+
+  // Sclera
+  const scleraGrad = ctx.createRadialGradient(CX-20, CY-20, 10, CX, CY, 200);
+  scleraGrad.addColorStop(0, '#fffef8');
+  scleraGrad.addColorStop(0.6, '#f5f0e8');
+  scleraGrad.addColorStop(1, '#e8ddd0');
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(CX, CY, 175, 90, 0, 0, Math.PI*2);
+  ctx.fillStyle = scleraGrad;
+  ctx.fill();
+  ctx.restore();
+
+  // Blood vessels
+  ctx.save();
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = '#c0504a';
+  ctx.lineWidth = 1.1;
+  const vessels = [
+    [[CX+55,CY-10],[CX+120,CY-38],[CX+152,CY-52]],
+    [[CX+65,CY+5],[CX+114,CY+28],[CX+148,CY+48]],
+    [[CX-48,CY-12],[CX-104,CY-36],[CX-140,CY-48]],
+    [[CX-52,CY+8],[CX-108,CY+26],[CX-144,CY+42]],
+  ];
+  vessels.forEach(pts => {
+    ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+    for (let i=1;i<pts.length;i++) ctx.quadraticCurveTo(pts[i-1][0],pts[i-1][1],pts[i][0],pts[i][1]);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  // Iris with nystagmus jitter
+  const ix = CX + gazeX + nystagmus;
+  const iy = CY + gazeY;
+  const IR = 66;
+  const pupilR = dilated ? 42 : 30;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(ix, iy, IR, 0, Math.PI*2);
+  ctx.fillStyle = irisGradient(ctx, ix, iy, IR);
+  ctx.fill();
+  ctx.restore();
+
+  // Iris texture
+  ctx.save();
+  ctx.globalAlpha = 0.11;
+  for (let i=0;i<36;i++) {
+    const angle = (i/36)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(ix+Math.cos(angle)*16, iy+Math.sin(angle)*16);
+    ctx.lineTo(ix+Math.cos(angle)*IR*0.92, iy+Math.sin(angle)*IR*0.92);
+    ctx.strokeStyle = i%3===0 ? '#a0c8e0' : '#1a3a50';
+    ctx.lineWidth = i%3===0 ? 1.4 : 0.7;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Limbal ring
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(ix, iy, IR, 0, Math.PI*2);
+  ctx.strokeStyle = '#0d2535';
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Pupil (dilated for CN3)
+  const pupilGrad = ctx.createRadialGradient(ix-6, iy-6, 1, ix, iy, pupilR);
+  pupilGrad.addColorStop(0, '#1a1a1a');
+  pupilGrad.addColorStop(1, '#000');
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(ix, iy, pupilR, 0, Math.PI*2);
+  ctx.fillStyle = pupilGrad;
+  ctx.fill();
+  ctx.restore();
+
+  // Catchlights
+  ctx.save();
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.ellipse(ix-16, iy-18, 9, 6, -0.5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = 0.35;
+  ctx.beginPath();
+  ctx.ellipse(ix+14, iy+12, 4.5, 3, 0.5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // ── EYELIDS ──
+
+  // Upper lid shadow
+  const upperLidShadow = ctx.createLinearGradient(CX, CY-90, CX, CY-28);
+  upperLidShadow.addColorStop(0, 'rgba(0,0,0,0.55)');
+  upperLidShadow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(CX, CY-58, 175, 56, 0, 0, Math.PI*2);
+  ctx.fillStyle = upperLidShadow;
+  ctx.fill();
+  ctx.restore();
+
+  // Ptosis: drop the upper lid
+  const ptosisOffset = ptosis ? 52 : 0;
+
+  // Upper eyelid
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(CX-175, CY);
+  ctx.bezierCurveTo(CX-114, CY-116+ptosisOffset, CX+76, CY-126+ptosisOffset, CX+175, CY-10);
+  ctx.lineTo(CX+175, CY-280);
+  ctx.lineTo(CX-175, CY-280);
+  ctx.closePath();
+  ctx.fillStyle = '#080c10';
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(CX-175, CY);
+  ctx.bezierCurveTo(CX-114, CY-116+ptosisOffset, CX+76, CY-126+ptosisOffset, CX+175, CY-10);
+  ctx.strokeStyle = '#2a1f1a';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Upper lash line
+  ctx.save();
+  ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 4.5;
+  ctx.beginPath();
+  ctx.moveTo(CX-175, CY);
+  ctx.bezierCurveTo(CX-114, CY-116+ptosisOffset, CX+76, CY-126+ptosisOffset, CX+175, CY-10);
+  ctx.stroke();
+  ctx.restore();
+
+  // Upper lashes
+  ctx.save();
+  ctx.strokeStyle = '#0a0a0a';
+  const lashT = 20;
+  for (let i=0;i<lashT;i++) {
+    const t = i/(lashT-1);
+    const bx = cubicBezier(t, CX-175, CX-114, CX+76, CX+175);
+    const by = cubicBezier(t, CY, CY-116+ptosisOffset, CY-126+ptosisOffset, CY-10);
+    const bxd = cubicBezierDeriv(t, CX-175, CX-114, CX+76, CX+175);
+    const byd = cubicBezierDeriv(t, CY, CY-116+ptosisOffset, CY-126+ptosisOffset, CY-10);
+    const len = Math.sqrt(bxd*bxd+byd*byd);
+    const nx2 = -byd/len, ny2 = bxd/len;
+    const ll = 12+Math.sin(t*Math.PI)*9;
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.quadraticCurveTo(bx+nx2*ll*0.55+0.3*bxd/len*7, by+ny2*ll*0.55+0.3*byd/len*7, bx+nx2*ll, by+ny2*ll);
+    ctx.lineWidth = 1.4+Math.sin(t*Math.PI)*0.9;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Lower eyelid
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(CX-175, CY);
+  ctx.bezierCurveTo(CX-96, CY+66, CX+76, CY+62, CX+175, CY-10);
+  ctx.lineTo(CX+175, CY+280);
+  ctx.lineTo(CX-175, CY+280);
+  ctx.closePath();
+  ctx.fillStyle = '#080c10';
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(CX-175, CY);
+  ctx.bezierCurveTo(CX-96, CY+66, CX+76, CY+62, CX+175, CY-10);
+  ctx.strokeStyle = '#2a1f1a'; ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(CX-175, CY);
+  ctx.bezierCurveTo(CX-96, CY+66, CX+76, CY+62, CX+175, CY-10);
+  ctx.stroke();
+  ctx.restore();
+
+  // Lower lashes
+  ctx.save();
+  ctx.strokeStyle = '#111';
+  const lashB = 12;
+  for (let i=0;i<lashB;i++) {
+    const t = i/(lashB-1);
+    const bx = cubicBezier(t, CX-175, CX-96, CX+76, CX+175);
+    const by = cubicBezier(t, CY, CY+66, CY+62, CY-10);
+    const bxd = cubicBezierDeriv(t, CX-175, CX-96, CX+76, CX+175);
+    const byd = cubicBezierDeriv(t, CY, CY+66, CY+62, CY-10);
+    const len = Math.sqrt(bxd*bxd+byd*byd);
+    const nx2 = byd/len, ny2 = -bxd/len;
+    const ll = 6+Math.sin(t*Math.PI)*4;
+    ctx.beginPath();
+    ctx.moveTo(bx,by);
+    ctx.lineTo(bx+nx2*ll, by+ny2*ll);
+    ctx.lineWidth = 1.1; ctx.stroke();
+  }
+  ctx.restore();
+
+  // Caruncle
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(CX-170, CY+4, 13, 9, 0.3, 0, Math.PI*2);
+  ctx.fillStyle = '#b85c5c'; ctx.globalAlpha = 0.55;
+  ctx.fill();
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════
+//  ANIMATION LOOP
+// ════════════════════════════════════════════════════════
+function animate(ts) {
+  const scenario = SCENARIOS[gameState.order[gameState.round]] || SCENARIOS[0];
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const nx = (gameState.mouse.x - vw/2) / (vw/2);
+  const ny = (gameState.mouse.y - vh/2) / (vh/2);
+
+  const tr = scenario.gazeR(nx, ny);
+  const tl = scenario.gazeL(nx, ny);
+
+  const spd = 0.11;
+  gameState.gazeR.x += (tr.x - gameState.gazeR.x)*spd;
+  gameState.gazeR.y += (tr.y - gameState.gazeR.y)*spd;
+  gameState.gazeL.x += (tl.x - gameState.gazeL.x)*spd;
+  gameState.gazeL.y += (tl.y - gameState.gazeL.y)*spd;
+
+  // Nystagmus for INO: left eye abducts on RIGHT gaze (nx > 0.2) and shows nystagmus
+  let nysR = 0, nysL = 0;
+  if (scenario.inoNystagmusLeft && nx > 0.2) {
+    gameState.nystagmusPhase = (gameState.nystagmusPhase || 0) + 0.18;
+    nysL = Math.sin(gameState.nystagmusPhase * 6) * 5;
+  } else {
+    gameState.nystagmusPhase = 0;
+  }
+
+  drawEye(ctxR, gameState.gazeR.x, gameState.gazeR.y, {
+    ptosis: !!scenario.ptosisR,
+    dilated: scenario.pupilR === 'dilated',
+    nystagmus: nysR,
+  });
+  drawEye(ctxL, gameState.gazeL.x, gameState.gazeL.y, {
+    ptosis: !!scenario.ptosisL,
+    dilated: scenario.pupilL === 'dilated',
+    nystagmus: nysL,
+  });
+
+  requestAnimationFrame(animate);
+}
+
+// ════════════════════════════════════════════════════════
+//  UI FUNCTIONS
+// ════════════════════════════════════════════════════════
+function buildDots() {
+  const container = document.getElementById('round-dots');
+  container.innerHTML = '';
+  for (let i=0;i<8;i++) {
+    const d = document.createElement('div');
+    d.className = 'round-dot' + (i===0 ? ' current' : '');
+    d.id = `dot-${i}`;
+    container.appendChild(d);
+  }
+}
+
+function updateDots(round, result) {
+  for (let i=0;i<8;i++) {
+    const d = document.getElementById(`dot-${i}`);
+    if (!d) continue;
+    d.className = 'round-dot';
+    if (i < round) {
+      d.classList.add(gameState.results[i] ? 'correct' : 'wrong');
+    } else if (i === round) {
+      d.classList.add('current');
+    }
+  }
+}
+
+function buildAnswers() {
+  const grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  ANSWER_OPTIONS.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.innerHTML = `<span class="answer-key">${ANSWER_KEYS[i]}</span><span class="answer-text">${opt}</span>`;
+    btn.addEventListener('click', () => handleAnswer(opt));
+    grid.appendChild(btn);
+  });
+}
+
+function handleAnswer(chosen) {
+  if (gameState.answered) return;
+  gameState.answered = true;
+
+  const scenario = SCENARIOS[gameState.order[gameState.round]];
+  const correct = chosen === scenario.name;
+  if (correct) gameState.score++;
+  gameState.results[gameState.round] = correct;
+
+  // Colour buttons
+  document.querySelectorAll('.answer-btn').forEach(btn => {
+    btn.disabled = true;
+    const label = btn.querySelector('.answer-text').textContent;
+    if (label === scenario.name) btn.classList.add('correct-choice');
+    else if (label === chosen && !correct) btn.classList.add('wrong-choice');
+  });
+
+  // Score
+  document.getElementById('score-display').textContent = `Score: ${gameState.score}`;
+
+  // Feedback
+  const panel = document.getElementById('feedback-panel');
+  const header = document.getElementById('feedback-header');
+  const body = document.getElementById('feedback-body');
+  header.className = 'feedback-header ' + (correct ? 'correct' : 'wrong');
+  header.textContent = correct ? `Correct! That was: ${scenario.name}` : `That was: ${scenario.name}`;
+  body.innerHTML = scenario.description;
+  panel.classList.add('visible');
+
+  updateDots(gameState.round);
+
+  // Last round → change button
+  const nextBtn = document.getElementById('next-btn');
+  if (gameState.round === 7) {
+    nextBtn.textContent = 'View Results →';
+  } else {
+    nextBtn.textContent = 'Next Case →';
+  }
+}
+
+function nextRound() {
+  if (gameState.round >= 7) {
+    showResults();
+    return;
+  }
+  gameState.round++;
+  gameState.answered = false;
+  gameState.gazeR = { x: 0, y: 0 };
+  gameState.gazeL = { x: 0, y: 0 };
+
+  document.getElementById('round-text').textContent = `Round ${gameState.round+1} of 8`;
+  document.getElementById('progress-fill').style.width = `${(gameState.round+1)/8*100}%`;
+  document.getElementById('feedback-panel').classList.remove('visible');
+  buildAnswers();
+  updateDots(gameState.round);
+}
+
+function showResults() {
+  showScreen('screen-results');
+
+  const scoreEl = document.getElementById('results-score');
+  scoreEl.textContent = gameState.score;
+
+  const msgs = [
+    [8, "Perfect score — outstanding clinical acumen."],
+    [6, "Excellent — you have a strong grasp of ocular motility."],
+    [4, "Good effort — review the cases you missed."],
+    [0, "Keep practicing — ocular motility takes time to master."],
+  ];
+  const msg = msgs.find(([min]) => gameState.score >= min);
+  document.getElementById('results-msg').textContent = msg[1];
+
+  const breakdown = document.getElementById('results-breakdown');
+  breakdown.innerHTML = '';
+  gameState.order.forEach((idx, round) => {
+    const s = SCENARIOS[idx];
+    const correct = gameState.results[round];
+    const row = document.createElement('div');
+    row.className = 'result-row';
+    row.innerHTML = `
+      <span class="result-row-name">${round+1}. ${s.name}</span>
+      <span class="result-row-badge ${correct?'c':'w'}">${correct?'CORRECT':'MISSED'}</span>
+    `;
+    breakdown.appendChild(row);
+  });
+}
+
+function startGame() {
+  gameState = {
+    order: shuffleArray([...Array(8).keys()]),
+    round: 0,
+    score: 0,
+    answered: false,
+    results: [],
+    mouse: { x: window.innerWidth/2, y: window.innerHeight/2 },
+    gazeR: { x: 0, y: 0 },
+    gazeL: { x: 0, y: 0 },
+    nystagmusPhase: 0,
+  };
+  buildDots();
+  buildAnswers();
+  document.getElementById('round-text').textContent = 'Round 1 of 8';
+  document.getElementById('progress-fill').style.width = '12.5%';
+  document.getElementById('score-display').textContent = 'Score: 0';
+  document.getElementById('feedback-panel').classList.remove('visible');
+  showScreen('screen-game');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════
+//  EVENTS
+// ════════════════════════════════════════════════════════
+window.addEventListener('mousemove', e => {
+  gameState.mouse.x = e.clientX;
+  gameState.mouse.y = e.clientY;
+  const cursor = document.getElementById('cursor');
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
+
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('next-btn').addEventListener('click', nextRound);
+document.getElementById('btn-restart').addEventListener('click', () => showScreen('screen-intro'));
+
+// ════════════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════════════
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
