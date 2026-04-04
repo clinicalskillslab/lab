@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Systolic Murmurs - Drag & Drop</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --teal: #009B9E;
+    --dark-teal: #007a7d;
+    --grey: #4A4E55;
+    --dark-grey: #33373d;
+    --light: #f5f7f8;
+    --white: #ffffff;
+    --border: #dde3e8;
+    --correct: #10b981;
+    --wrong: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--light);
+    color: var(--dark-grey);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--dark-grey);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .header-logo {
+    width: 38px; height: 38px;
+    background: var(--teal);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .header-logo svg { width: 22px; height: 22px; }
+  .header-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; color: var(--white); }
+  .header-sub { font-size: 0.78rem; color: #aab; margin-top: 1px; }
+
+  /* ── OUTER SHELL ── */
+  .shell {
+    display: flex;
+    gap: 0;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    align-items: flex-start;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 230px;
+    min-width: 200px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-right: 18px;
+  }
+  .sidebar-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .sidebar-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    color: var(--teal);
+    margin-bottom: 10px;
+  }
+  .sidebar-card ol, .sidebar-card ul {
+    padding-left: 17px;
+    font-size: 0.78rem;
+    color: var(--grey);
+    line-height: 1.7;
+  }
+  .hint-box {
+    background: #e6f7f7;
+    border: 1.5px solid var(--teal);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.76rem;
+    color: var(--dark-teal);
+    line-height: 1.6;
+  }
+  .hint-box strong { display: block; margin-bottom: 4px; color: var(--dark-teal); }
+
+  /* ── SCORE BAR ── */
+  .score-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    color: var(--grey);
+    flex-wrap: wrap;
+  }
+  .score-pill {
+    background: var(--teal);
+    color: var(--white);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-left: auto;
+  }
+  .btn-check, .btn-reset {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s;
+  }
+  .btn-check {
+    background: var(--teal);
+    color: var(--white);
+  }
+  .btn-check:hover { background: var(--dark-teal); transform: translateY(-1px); }
+  .btn-reset {
+    background: var(--light);
+    color: var(--grey);
+    border: 1.5px solid var(--border);
+    margin-top: 6px;
+  }
+  .btn-reset:hover { background: var(--border); }
+
+  /* ── MAIN AREA ── */
+  .main {
+    flex: 1;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  /* ── PUZZLE COLUMN ── */
+  .puzzle-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  /* ── CATEGORY CARD ── */
+  .category-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .category-header {
+    background: var(--dark-grey);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .category-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    color: var(--white);
+    letter-spacing: 0.01em;
+  }
+  .cat-badge {
+    background: var(--teal);
+    color: var(--white);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-left: auto;
+  }
+  .category-body {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  /* SVG diagram panel */
+  .diagram-panel {
+    width: 140px;
+    min-width: 120px;
+    flex-shrink: 0;
+    background: #f0fafa;
+    border-right: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 8px;
+  }
+  .diagram-panel svg {
+    width: 100%;
+    max-width: 130px;
+    height: auto;
+  }
+  /* Drop slots */
+  .drop-list {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+  }
+  .drop-slot {
+    min-height: 40px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    background: var(--light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.18s, background 0.18s;
+    position: relative;
+  }
+  .drop-slot.drag-over {
+    border-color: var(--teal);
+    background: #e6f7f7;
+  }
+  .drop-slot.correct { border-color: var(--correct); background: #d1fae5; border-style: solid; }
+  .drop-slot.wrong   { border-color: var(--wrong);   background: #fee2e2; border-style: solid; }
+
+  /* ── TILES ── */
+  .tile {
+    padding: 8px 12px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.80rem;
+    font-weight: 500;
+    color: var(--dark-grey);
+    cursor: grab;
+    user-select: none;
+    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  }
+  .tile:hover { box-shadow: 0 4px 12px rgba(0,155,158,0.15); border-color: var(--teal); }
+  .tile.dragging { opacity: 0.45; transform: scale(0.97); }
+  .tile.selected { border-color: var(--teal); background: #e6f7f7; box-shadow: 0 0 0 2px var(--teal); }
+  .tile.correct { border-color: var(--correct); background: #d1fae5; color: #065f46; cursor: default; }
+  .tile.wrong   { border-color: var(--wrong);   background: #fee2e2; color: #991b1b; }
+  .tile.placed  { cursor: pointer; }
+  .drop-slot .tile { margin: 0; }
+
+  /* ── ANSWER BANK ── */
+  .bank-col {
+    width: 170px;
+    min-width: 150px;
+    flex-shrink: 0;
+  }
+  .bank-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    position: sticky;
+    top: 16px;
+  }
+  .bank-header {
+    background: var(--teal);
+    padding: 10px 14px;
+  }
+  .bank-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.92rem;
+    color: var(--white);
+  }
+  .bank-header p {
+    font-size: 0.70rem;
+    color: rgba(255,255,255,0.80);
+    margin-top: 2px;
+  }
+  .bank-list {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  /* ── FEEDBACK BANNER ── */
+  .feedback-banner {
+    display: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+  .feedback-banner.show { display: block; }
+  .feedback-banner.success { background: #d1fae5; color: #065f46; border: 1.5px solid var(--correct); }
+  .feedback-banner.partial { background: #fef3c7; color: #92400e; border: 1.5px solid #f59e0b; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 820px) {
+    .shell { flex-direction: column; padding: 12px 10px; }
+    .sidebar { width: 100%; margin-right: 0; margin-bottom: 4px; flex-direction: row; flex-wrap: wrap; }
+    .sidebar-card { flex: 1; min-width: 180px; }
+    .hint-box { width: 100%; }
+    .score-bar { order: -1; width: 100%; }
+    .main { flex-direction: column; gap: 10px; }
+    .bank-col { width: 100%; }
+    .bank-card { position: static; }
+    .bank-list { flex-direction: row; flex-wrap: wrap; }
+    .bank-list .tile { width: auto; flex: 1; min-width: 120px; }
+    .diagram-panel { width: 110px; min-width: 100px; }
+    .btn-check, .btn-reset { width: auto; flex: 1; }
+  }
+  @media (max-width: 540px) {
+    .category-header h2 { font-size: 0.82rem; }
+    .diagram-panel { width: 90px; min-width: 80px; }
+    .tile { font-size: 0.74rem; padding: 7px 8px; }
+    .bank-col { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    </svg>
+  </div>
+  <div>
+    <div class="header-title">Heart Sounds</div>
+    <div class="header-sub">Systolic Murmurs — Drag &amp; Drop</div>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <h3>How to Play</h3>
+      <ol>
+        <li>Review the murmurs in the answer bank on the right.</li>
+        <li>Drag (or tap) each murmur tile onto the correct category.</li>
+        <li>Not all murmurs listed are systolic — leave distractors in the bank.</li>
+        <li>Tap a placed tile to return it to the bank.</li>
+        <li>Press <strong>Check Answers</strong> when ready.</li>
+      </ol>
+    </div>
+    <div class="hint-box">
+      <strong>Tip</strong>
+      Each category shows a phonocardiogram with S1 and S2 landmarks. Use the shape of the murmur to guide you.
+    </div>
+    <div class="score-bar">
+      Score <span class="score-pill" id="scorePill">0 / 8</span>
+    </div>
+    <button class="btn-check" id="btnCheck" onclick="checkAnswers()">Check Answers</button>
+    <button class="btn-reset" onclick="resetPuzzle()">Reset</button>
+    <div class="feedback-banner" id="feedbackBanner"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- PUZZLE COLUMN -->
+    <div class="puzzle-col" id="puzzleCol">
+
+      <!-- EJECTION SYSTOLIC -->
+      <div class="category-card">
+        <div class="category-header">
+          <h2>Ejection Systolic</h2>
+          <span class="cat-badge">Crescendo-Decrescendo</span>
+        </div>
+        <div class="category-body">
+          <div class="diagram-panel">
+            <!-- Ejection Systolic: crescendo-decrescendo diamond between S1 and S2 -->
+            <svg viewBox="0 0 130 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- baseline -->
+              <line x1="8" y1="60" x2="122" y2="60" stroke="#c0cdd5" stroke-width="1"/>
+              <!-- S1 spike -->
+              <polyline points="14,60 18,38 22,60" stroke="#009B9E" stroke-width="2" fill="none"/>
+              <!-- gap -->
+              <!-- crescendo-decrescendo murmur -->
+              <path d="M26,60 C35,60 40,20 55,16 C70,12 76,20 84,60" stroke="#33373d" stroke-width="2" fill="rgba(0,155,158,0.10)"/>
+              <!-- S2 spike -->
+              <polyline points="88,60 92,38 96,60" stroke="#009B9E" stroke-width="2" fill="none"/>
+              <!-- diastole baseline -->
+              <line x1="96" y1="60" x2="118" y2="60" stroke="#33373d" stroke-width="1.5"/>
+              <!-- Labels -->
+              <text x="15" y="74" font-family="DM Sans,sans-serif" font-size="9" fill="#009B9E" text-anchor="middle" font-weight="600">S1</text>
+              <text x="92" y="74" font-family="DM Sans,sans-serif" font-size="9" fill="#009B9E" text-anchor="middle" font-weight="600">S2</text>
+              <text x="55" y="10" font-family="DM Sans,sans-serif" font-size="7.5" fill="#4A4E55" text-anchor="middle">ejection murmur</text>
+            </svg>
+          </div>
+          <div class="drop-list" id="zone-ejection">
+            <div class="drop-slot" data-zone="ejection" data-index="0"></div>
+            <div class="drop-slot" data-zone="ejection" data-index="1"></div>
+            <div class="drop-slot" data-zone="ejection" data-index="2"></div>
+            <div class="drop-slot" data-zone="ejection" data-index="3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANSYSTOLIC -->
+      <div class="category-card">
+        <div class="category-header">
+          <h2>Pansystolic</h2>
+          <span class="cat-badge">Plateau / Uniform</span>
+        </div>
+        <div class="category-body">
+          <div class="diagram-panel">
+            <!-- Pansystolic: flat plateau from S1 to S2 -->
+            <svg viewBox="0 0 130 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="8" y1="60" x2="122" y2="60" stroke="#c0cdd5" stroke-width="1"/>
+              <!-- S1 spike -->
+              <polyline points="14,60 18,38 22,60" stroke="#009B9E" stroke-width="2" fill="none"/>
+              <!-- plateau murmur: rectangle from S1 to S2 -->
+              <rect x="22" y="30" width="66" height="30" rx="2" fill="rgba(0,155,158,0.10)" stroke="#33373d" stroke-width="2"/>
+              <!-- flat top line already drawn by rect; add interior texture lines -->
+              <line x1="22" y1="38" x2="88" y2="38" stroke="#33373d" stroke-width="1" stroke-dasharray="3 3" opacity="0.35"/>
+              <!-- S2 spike -->
+              <polyline points="88,60 92,38 96,60" stroke="#009B9E" stroke-width="2" fill="none"/>
+              <line x1="96" y1="60" x2="118" y2="60" stroke="#33373d" stroke-width="1.5"/>
+              <text x="15" y="74" font-family="DM Sans,sans-serif" font-size="9" fill="#009B9E" text-anchor="middle" font-weight="600">S1</text>
+              <text x="92" y="74" font-family="DM Sans,sans-serif" font-size="9" fill="#009B9E" text-anchor="middle" font-weight="600">S2</text>
+              <text x="55" y="24" font-family="DM Sans,sans-serif" font-size="7.5" fill="#4A4E55" text-anchor="middle">pansystolic murmur</text>
+            </svg>
+          </div>
+          <div class="drop-list" id="zone-pansystolic">
+            <div class="drop-slot" data-zone="pansystolic" data-index="0"></div>
+            <div class="drop-slot" data-zone="pansystolic" data-index="1"></div>
+            <div class="drop-slot" data-zone="pansystolic" data-index="2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LATE SYSTOLIC -->
+      <div class="category-card">
+        <div class="category-header">
+          <h2>Late Systolic</h2>
+          <span class="cat-badge">Mid-Click + Crescendo</span>
+        </div>
+        <div class="category-body">
+          <div class="diagram-panel">
+            <!-- Late Systolic: click + late crescendo to S2 -->
+            <svg viewBox="0 0 130 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="8" y1="60" x2="122" y2="60" stroke="#c0cdd5" stroke-width="1"/>
+              <!-- S1 spike -->
+              <polyline points="14,60 18,38 22,60" stroke="#009B9E" stroke-width="2" fill="none"/>
+              <!-- quiet early systole -->
+              <line x1="22" y1="60" x2="46" y2="60" stroke="#33373d" stroke-width="1.5"/>
+              <!-- mid-systolic click spike -->
+              <polyline points="46,60 50,44 54,60" stroke="#e67e22" stroke-width="2" fill="none"/>
+              <!-- late crescendo murmur -->
+              <path d="M54,60 C60,58 70,40 88,30" stroke="#33373d" stroke-width="2" fill="none"/>
+              <path d="M54,60 L88,60 L88,30 C70,40 60,58 54,60 Z" fill="rgba(0,155,158,0.10)"/>
+              <!-- S2 spike -->
+              <polyline points="88,60 92,38 96,60" stroke="#009B9E" stroke-width="2" fill="none"/>
+              <line x1="96" y1="60" x2="118" y2="60" stroke="#33373d" stroke-width="1.5"/>
+              <text x="15" y="74" font-family="DM Sans,sans-serif" font-size="9" fill="#009B9E" text-anchor="middle" font-weight="600">S1</text>
+              <text x="92" y="74" font-family="DM Sans,sans-serif" font-size="9" fill="#009B9E" text-anchor="middle" font-weight="600">S2</text>
+              <text x="50" y="39" font-family="DM Sans,sans-serif" font-size="7" fill="#e67e22" text-anchor="middle">click</text>
+              <text x="75" y="24" font-family="DM Sans,sans-serif" font-size="7.5" fill="#4A4E55" text-anchor="middle">late murmur</text>
+            </svg>
+          </div>
+          <div class="drop-list" id="zone-late">
+            <div class="drop-slot" data-zone="late" data-index="0"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /puzzle-col -->
+
+    <!-- ANSWER BANK -->
+    <div class="bank-col">
+      <div class="bank-card">
+        <div class="bank-header">
+          <h3>Murmur Bank</h3>
+          <p>Drag onto the correct category</p>
+        </div>
+        <div class="bank-list" id="bankList">
+          <!-- tiles injected by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const MURMURS = [
+  { id:'as',  label:'Aortic Stenosis',        zone:'ejection'    },
+  { id:'ps',  label:'Pulmonary Stenosis',      zone:'ejection'    },
+  { id:'ho',  label:'HOCM',                   zone:'ejection'    },
+  { id:'asc', label:'Aortic Sclerosis',        zone:'ejection'    },
+  { id:'mr',  label:'Mitral Regurgitation',    zone:'pansystolic' },
+  { id:'tr',  label:'Tricuspid Regurgitation', zone:'pansystolic' },
+  { id:'vsd', label:'VSD',                     zone:'pansystolic' },
+  { id:'mvp', label:'Mitral Valve Prolapse',   zone:'late'        },
+  // distractors (diastolic)
+  { id:'ar',  label:'Aortic Regurgitation',    zone:null          },
+  { id:'ms',  label:'Mitral Stenosis',         zone:null          },
+  { id:'pr',  label:'Pulmonary Regurgitation', zone:null          },
+  { id:'ts',  label:'Tricuspid Stenosis',      zone:null          },
+];
+
+// zone slot counts (must match DOM)
+const ZONE_SLOTS = { ejection: 4, pansystolic: 3, late: 1 };
+const TOTAL_CORRECT = 8;
+
+// state: slotContents[zone][index] = murmurId or null
+let slotContents = {};
+// bankIds: set of ids currently in the bank
+let bankIds = new Set();
+// selected tile for tap-to-place
+let selectedId = null;
+let checked = false;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+function initPuzzle() {
+  checked = false;
+  selectedId = null;
+  bankIds = new Set(MURMURS.map(m => m.id));
+  slotContents = {};
+  for (const z of Object.keys(ZONE_SLOTS)) {
+    slotContents[z] = new Array(ZONE_SLOTS[z]).fill(null);
+  }
+  renderBank();
+  renderSlots();
+  updateScore();
+  document.getElementById('feedbackBanner').className = 'feedback-banner';
+}
+
+// ── RENDER BANK ───────────────────────────────────────────────────────────
+function renderBank() {
+  const list = document.getElementById('bankList');
+  list.innerHTML = '';
+  const order = shuffle([...MURMURS].filter(m => bankIds.has(m.id)));
+  for (const m of order) {
+    const tile = makeTile(m.id, m.label, 'bank');
+    list.appendChild(tile);
+  }
+}
+
+function makeTile(id, label, location) {
+  const el = document.createElement('div');
+  el.className = 'tile';
+  el.setAttribute('draggable', 'true');
+  el.dataset.id = id;
+  el.dataset.loc = location;
+  if (selectedId === id) el.classList.add('selected');
+  el.textContent = label;
+
+  // Desktop drag
+  el.addEventListener('dragstart', onDragStart);
+  el.addEventListener('dragend',   onDragEnd);
+
+  // Tap / click
+  el.addEventListener('click', onTileClick);
+
+  // Touch drag
+  el.addEventListener('touchstart', onTouchStart, { passive: true });
+  el.addEventListener('touchmove',  onTouchMove,  { passive: false });
+  el.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
+  if (location === 'slot') el.classList.add('placed');
+  return el;
+}
+
+// ── RENDER SLOTS ──────────────────────────────────────────────────────────
+function renderSlots() {
+  for (const zone of Object.keys(ZONE_SLOTS)) {
+    const container = document.getElementById('zone-' + zone);
+    const slots = container.querySelectorAll('.drop-slot');
+    slots.forEach((slot, idx) => {
+      slot.innerHTML = '';
+      slot.className = 'drop-slot';
+      const mid = slotContents[zone][idx];
+      if (mid) {
+        const m = MURMURS.find(x => x.id === mid);
+        const tile = makeTile(m.id, m.label, 'slot');
+        slot.appendChild(tile);
+      }
+      // drag-over events
+      slot.ondragover  = e => { e.preventDefault(); slot.classList.add('drag-over'); };
+      slot.ondragleave = ()  => slot.classList.remove('drag-over');
+      slot.ondrop      = e  => onDrop(e, zone, idx);
+    });
+  }
+}
+
+// ── DRAG (DESKTOP) ────────────────────────────────────────────────────────
+let dragId   = null;
+let dragFrom = null; // { type:'bank' } or { type:'slot', zone, idx }
+
+function onDragStart(e) {
+  dragId = e.currentTarget.dataset.id;
+  dragFrom = getDragFrom(e.currentTarget);
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+}
+
+function getDragFrom(el) {
+  if (el.dataset.loc === 'bank') return { type: 'bank' };
+  // find slot
+  const slot = el.closest('.drop-slot');
+  const zone = slot.dataset.zone;
+  const idx  = parseInt(slot.dataset.index);
+  return { type: 'slot', zone, idx };
+}
+
+function onDrop(e, toZone, toIdx) {
+  e.preventDefault();
+  const slot = e.currentTarget;
+  slot.classList.remove('drag-over');
+  if (!dragId) return;
+  placeInSlot(dragId, dragFrom, toZone, toIdx);
+  dragId = null; dragFrom = null;
+}
+
+// ── TAP TO SELECT & PLACE ─────────────────────────────────────────────────
+function onTileClick(e) {
+  const el = e.currentTarget;
+  const id = el.dataset.id;
+  if (checked) {
+    if (el.dataset.loc === 'slot') returnToBank(id, el);
+    return;
+  }
+
+  if (el.dataset.loc === 'slot') {
+    // clicking a placed tile returns it
+    returnToBank(id, el);
+    return;
+  }
+
+  // Bank tile
+  if (selectedId === id) {
+    // deselect
+    selectedId = null;
+    renderBank();
+    return;
+  }
+
+  // If something was already selected, try to find an empty slot
+  if (selectedId) {
+    selectedId = null;
+  }
+
+  selectedId = id;
+  renderBank();
+  // highlight — user now needs to tap a slot
+  addSlotClickListeners();
+}
+
+function addSlotClickListeners() {
+  document.querySelectorAll('.drop-slot').forEach(slot => {
+    slot.style.cursor = 'pointer';
+    slot.onclick = () => {
+      if (!selectedId) return;
+      const zone = slot.dataset.zone;
+      const idx  = parseInt(slot.dataset.index);
+      if (slotContents[zone][idx]) return; // slot occupied
+      placeInSlot(selectedId, { type:'bank' }, zone, idx);
+      selectedId = null;
+      removeSlotClickListeners();
+    };
+  });
+}
+function removeSlotClickListeners() {
+  document.querySelectorAll('.drop-slot').forEach(s => {
+    s.style.cursor = '';
+    s.onclick = null;
+  });
+}
+
+function returnToBank(id, tileEl) {
+  // find which slot holds this id and clear it
+  for (const zone of Object.keys(slotContents)) {
+    for (let i = 0; i < slotContents[zone].length; i++) {
+      if (slotContents[zone][i] === id) {
+        slotContents[zone][i] = null;
+      }
+    }
+  }
+  bankIds.add(id);
+  renderBank();
+  renderSlots();
+  updateScore();
+  checked = false;
+  clearFeedback();
+}
+
+// ── PLACE IN SLOT ─────────────────────────────────────────────────────────
+function placeInSlot(id, from, toZone, toIdx) {
+  // if slot occupied, swap or reject
+  const occupant = slotContents[toZone][toIdx];
+  if (occupant) {
+    // return occupant to bank
+    bankIds.add(occupant);
+  }
+  // remove from previous location
+  if (from.type === 'bank') {
+    bankIds.delete(id);
+  } else {
+    slotContents[from.zone][from.idx] = null;
+  }
+  slotContents[toZone][toIdx] = id;
+  checked = false;
+  clearFeedback();
+  renderBank();
+  renderSlots();
+  updateScore();
+}
+
+// ── TOUCH DRAG ────────────────────────────────────────────────────────────
+let touchDragEl = null;
+let touchGhost  = null;
+let touchId_    = null;
+let touchFrom_  = null;
+
+function onTouchStart(e) {
+  const el = e.currentTarget;
+  touchId_   = el.dataset.id;
+  touchFrom_ = getDragFrom(el);
+  const rect  = el.getBoundingClientRect();
+  touchGhost  = el.cloneNode(true);
+  touchGhost.style.cssText = `
+    position:fixed; left:${rect.left}px; top:${rect.top}px;
+    width:${rect.width}px; opacity:0.8; pointer-events:none;
+    z-index:9999; border-radius:8px;
+    box-shadow:0 8px 24px rgba(0,155,158,0.25);
+    font-family:'DM Sans',sans-serif; font-size:0.80rem;
+    padding:8px 12px; background:#fff; border:1.5px solid #009B9E;
+  `;
+  document.body.appendChild(touchGhost);
+  touchDragEl = el;
+  el.classList.add('dragging');
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  const t = e.touches[0];
+  if (touchGhost) {
+    touchGhost.style.left = (t.clientX - 40) + 'px';
+    touchGhost.style.top  = (t.clientY - 20) + 'px';
+  }
+  // highlight drop slots
+  document.querySelectorAll('.drop-slot').forEach(s => {
+    const r = s.getBoundingClientRect();
+    if (t.clientX >= r.left && t.clientX <= r.right &&
+        t.clientY >= r.top  && t.clientY <= r.bottom) {
+      s.classList.add('drag-over');
+    } else {
+      s.classList.remove('drag-over');
+    }
+  });
+}
+
+function onTouchEnd(e) {
+  if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+  if (touchDragEl) { touchDragEl.classList.remove('dragging'); touchDragEl = null; }
+  const t = e.changedTouches[0];
+  document.querySelectorAll('.drop-slot').forEach(s => {
+    s.classList.remove('drag-over');
+    const r = s.getBoundingClientRect();
+    if (t.clientX >= r.left && t.clientX <= r.right &&
+        t.clientY >= r.top  && t.clientY <= r.bottom) {
+      const zone = s.dataset.zone;
+      const idx  = parseInt(s.dataset.index);
+      placeInSlot(touchId_, touchFrom_, zone, idx);
+    }
+  });
+  touchId_ = null; touchFrom_ = null;
+}
+
+// ── SCORE ─────────────────────────────────────────────────────────────────
+function updateScore() {
+  let placed = 0;
+  for (const zone of Object.keys(slotContents)) {
+    placed += slotContents[zone].filter(Boolean).length;
+  }
+  document.getElementById('scorePill').textContent = placed + ' / ' + TOTAL_CORRECT;
+}
+
+// ── CHECK ─────────────────────────────────────────────────────────────────
+function checkAnswers() {
+  checked = true;
+  let correct = 0;
+  for (const zone of Object.keys(slotContents)) {
+    const container = document.getElementById('zone-' + zone);
+    const slots = container.querySelectorAll('.drop-slot');
+    slotContents[zone].forEach((mid, idx) => {
+      if (!mid) return;
+      const m = MURMURS.find(x => x.id === mid);
+      const slot = slots[idx];
+      const tile = slot.querySelector('.tile');
+      if (m.zone === zone) {
+        slot.classList.add('correct');
+        if (tile) tile.classList.add('correct');
+        correct++;
+      } else {
+        slot.classList.add('wrong');
+        if (tile) tile.classList.add('wrong');
+      }
+    });
+  }
+  // show feedback
+  const banner = document.getElementById('feedbackBanner');
+  if (correct === TOTAL_CORRECT) {
+    banner.className = 'feedback-banner show success';
+    banner.textContent = 'Excellent! All ' + TOTAL_CORRECT + ' systolic murmurs correctly placed!';
+  } else {
+    banner.className = 'feedback-banner show partial';
+    banner.textContent = correct + ' of ' + TOTAL_CORRECT + ' correct. Review the highlighted slots and try again.';
+  }
+  document.getElementById('scorePill').textContent = correct + ' / ' + TOTAL_CORRECT;
+}
+
+function clearFeedback() {
+  document.getElementById('feedbackBanner').className = 'feedback-banner';
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────
+function resetPuzzle() { initPuzzle(); }
+
+// ── START ─────────────────────────────────────────────────────────────────
+initPuzzle();
+</script>
+</body>
+</html>
