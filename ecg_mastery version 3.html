@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ECG Mastery — Cardiac Clinical Skills</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    min-height: 100vh;
+  }
+  .app {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+  }
+  header h1 span { color: #58a6ff; }
+  .scorebar {
+    display: flex;
+    gap: 18px;
+    font-size: 14px;
+    color: #8b949e;
+  }
+  .scorebar b { color: #e6edf3; }
+  .case-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+  }
+  .case-banner .case-num { font-weight: 600; color: #58a6ff; }
+  .case-banner .case-vignette { color: #c9d1d9; font-size: 14px; font-style: italic; }
+
+  .ecg-wrap {
+    background: #fff5f5;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 18px;
+    overflow-x: auto;
+  }
+  .ecg-wrap svg { display: block; margin: 0 auto; }
+
+  .workflow {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .step-num {
+    background: #1f6feb;
+    color: #fff;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600;
+  }
+  .step-title { font-size: 17px; font-weight: 600; }
+  .step-prompt { color: #8b949e; margin-bottom: 14px; font-size: 14px; }
+  .options { display: flex; flex-wrap: wrap; gap: 10px; }
+  .option {
+    background: #21262d;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .option:hover:not(:disabled) {
+    background: #30363d;
+    border-color: #58a6ff;
+  }
+  .option.correct {
+    background: #1a4d2e !important;
+    border-color: #2ea043 !important;
+    color: #aff5b4;
+  }
+  .option.wrong {
+    background: #4d1a1a !important;
+    border-color: #da3633 !important;
+    color: #ffa198;
+  }
+  .option:disabled { cursor: default; opacity: 0.6; }
+  .option.correct:disabled, .option.wrong:disabled { opacity: 1; }
+
+  .feedback {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok {
+    background: rgba(46,160,67,0.12);
+    border: 1px solid #2ea043;
+    color: #aff5b4;
+  }
+  .feedback.no {
+    background: rgba(218,54,51,0.10);
+    border: 1px solid #da3633;
+    color: #ffa198;
+  }
+  .feedback b { color: inherit; }
+
+  .step-history {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #30363d;
+    font-size: 13px;
+    color: #8b949e;
+  }
+  .step-history div { margin: 4px 0; }
+  .step-history .ok-tick { color: #56d364; }
+  .step-history .no-cross { color: #f85149; }
+
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .btn {
+    background: #238636;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:hover { background: #2ea043; }
+  .btn.secondary { background: #30363d; }
+  .btn.secondary:hover { background: #484f58; }
+
+  .summary {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+  }
+  .summary h2 { margin-top: 0; color: #58a6ff; }
+  .summary .big-score {
+    font-size: 48px;
+    font-weight: 700;
+    color: #56d364;
+    margin: 14px 0;
+  }
+
+  .lead-label {
+    font-size: 14px;
+    font-weight: 600;
+    fill: #57534e;
+    font-family: -apple-system, sans-serif;
+  }
+
+  .legend {
+    font-size: 12px;
+    color: #8b949e;
+    text-align: center;
+    margin-top: 6px;
+  }
+
+  @media (max-width: 1000px) {
+    .options { flex-direction: column; }
+    .option { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>ECG <span>Mastery</span> — Structured Interpretation</h1>
+    <div class="scorebar">
+      <div>Case <b id="caseIdx">1</b> of <b id="caseTotal">8</b></div>
+      <div>Score <b id="scoreNow">0</b> / <b id="scoreMax">0</b></div>
+    </div>
+  </header>
+
+  <div class="case-banner">
+    <div>
+      <div class="case-num" id="caseTitle">Case 1</div>
+      <div class="case-vignette" id="caseVignette"></div>
+    </div>
+    <div style="font-size:13px;color:#8b949e;">Speed 25 mm/s · Gain 10 mm/mV</div>
+  </div>
+
+  <div class="ecg-wrap">
+    <svg id="ecg" width="1140" height="700" viewBox="0 0 1140 700"></svg>
+  </div>
+  <div class="legend">Standard 12-lead layout · Rhythm strip: Lead II</div>
+
+  <div class="workflow" id="workflow"></div>
+</div>
+
+<script>
+/* =============================================================
+   ECG MASTERY — Structured 12-lead interpretation game
+   ============================================================= */
+
+/* ---------- ECG WAVEFORM ENGINE ---------- */
+
+// Each lead has a base PQRST morphology (in mV). We then mutate this
+// based on pathology before rendering.
+const baseMorph = {
+  // amplitudes in mV; q/s are negative
+  I:   { p: 0.12, q: -0.05, r: 0.90, s: -0.10, t: 0.25 },
+  II:  { p: 0.18, q: -0.05, r: 1.20, s: -0.10, t: 0.32 },
+  III: { p: 0.08, q: -0.05, r: 0.55, s: -0.20, t: 0.12 },
+  aVR: { p: -0.15, q: 0.05, r: -0.70, s: 0.10, t: -0.20 },
+  aVL: { p: 0.08, q: -0.05, r: 0.55, s: -0.15, t: 0.15 },
+  aVF: { p: 0.15, q: -0.05, r: 0.85, s: -0.15, t: 0.22 },
+  V1:  { p: 0.05, q: 0.0,   r: 0.20, s: -0.85, t: -0.10 },
+  V2:  { p: 0.10, q: 0.0,   r: 0.45, s: -1.20, t: 0.20 },
+  V3:  { p: 0.15, q: -0.05, r: 0.85, s: -0.85, t: 0.30 },
+  V4:  { p: 0.18, q: -0.10, r: 1.05, s: -0.30, t: 0.40 },
+  V5:  { p: 0.18, q: -0.10, r: 1.15, s: -0.10, t: 0.32 },
+  V6:  { p: 0.15, q: -0.10, r: 1.10, s: 0.0,   t: 0.25 }
+};
+
+const ALL_LEADS = ["I","II","III","aVR","aVL","aVF","V1","V2","V3","V4","V5","V6"];
+
+// Apply a pathology to base morphology to produce per-lead beat parameters.
+function morphForCase(caseDef, lead) {
+  let m = { ...baseMorph[lead] };
+  m.stOffset = 0;        // default — pathology branches override
+  // beat timing defaults (seconds)
+  let t = {
+    pDur: 0.09, prSeg: 0.07,                 // → PR interval ≈ 160ms
+    qDur: 0.02, qrsCore: 0.06, sTail: 0.02,  // → QRS ≈ 100ms
+    stSeg: 0.10, tDur: 0.20,                 // → QT ≈ 400ms
+    stOffset: 0
+  };
+
+  // ----- BBBs widen QRS and twist morphology -----
+  if (caseDef.lbbb) {
+    t.qrsCore = 0.13; t.sTail = 0.04;        // QRS ~170ms
+    if (["V5","V6","I","aVL"].includes(lead)) {
+      m.q = 0;                                // no septal Q (loss of septal forces)
+      // Don't artificially boost R amplitude — the M-shape morphology *itself*
+      // signals LBBB, and a forced 1.3 mV R was clipping panels in lateral leads.
+      m.s = -0.05;                            // small "s" trough between r1 and r2
+      m.notchedR = true;                      // M-shape rendered in QRS engine
+      m.t = -0.30;                            // discordant T
+      m.stOffset = -0.10;
+    }
+    if (["V1","V2","V3"].includes(lead)) {
+      m.r = 0.05;
+      m.s = -1.30;
+      m.notchedS = true;                      // W-shape
+      m.t = 0.30;                             // discordant T (positive)
+      m.stOffset = 0.10;
+    }
+  }
+  if (caseDef.rbbb) {
+    t.qrsCore = 0.12; t.sTail = 0.04;        // QRS ~160ms
+    if (["V1","V2"].includes(lead)) {
+      m.r = 0.30; m.s = -0.40;
+      m.rPrime = 0.85;                        // rsR' (M-shape)
+      m.t = -0.25;                            // discordant T
+      m.stOffset = -0.05;
+    }
+    if (["I","V5","V6","aVL"].includes(lead)) {
+      m.s = -0.40;                            // slurred broad S
+      m.slurredS = true;
+    }
+  }
+
+  // ----- LVH (Sokolow-Lyon: SV1 + RV5/V6 > 35mm) with strain -----
+  if (caseDef.lvh) {
+    if (lead === "V1") { m.s = -1.60; }
+    if (lead === "V2") { m.s = -1.80; }
+    if (lead === "V5") { m.r = 2.40; m.t = -0.30; m.stOffset = -0.10; }
+    if (lead === "V6") { m.r = 2.10; m.t = -0.25; m.stOffset = -0.10; }
+    if (lead === "I")  { m.r = 1.40; m.t = -0.15; m.stOffset = -0.05; }
+    if (lead === "aVL"){ m.r = 1.30; m.t = -0.15; m.stOffset = -0.05; }
+  }
+
+  // ----- RVH: dominant R in V1, deep S in V6, RAD, strain V1-V3 -----
+  if (caseDef.rvh) {
+    if (lead === "V1") { m.r = 1.30; m.s = -0.30; m.t = -0.30; m.stOffset = -0.08; }
+    if (lead === "V2") { m.r = 1.00; m.s = -0.50; m.t = -0.20; m.stOffset = -0.05; }
+    if (lead === "V3") { m.r = 0.70; m.s = -0.70; }
+    if (lead === "V5") { m.r = 0.50; m.s = -0.60; }
+    if (lead === "V6") { m.r = 0.40; m.s = -0.80; }
+    if (lead === "I")  { m.r = 0.25; m.s = -0.40; }
+    if (lead === "III"){ m.r = 1.20; m.s = -0.05; }
+    if (lead === "aVF"){ m.r = 1.10; m.s = -0.05; }
+    if (lead === "aVL"){ m.r = -0.10; m.s = -0.40; }
+  }
+
+  // ----- Anterior STEMI: coved tombstone STE V1-V4, hyperacute T,
+  //       small Q (early-evolution), reciprocal inferior depression -----
+  if (caseDef.antMI) {
+    if (lead === "V1") { m.q = 0;     m.r = 0.10; m.s = -0.45; m.stOffset = 0.18; m.t = 0.30; m.coved = true; }
+    if (lead === "V2") { m.q = -0.05; m.r = 0.45; m.s = -0.95; m.stOffset = 0.45; m.t = 0.55; m.coved = true; }
+    if (lead === "V3") { m.q = -0.05; m.r = 0.80; m.s = -0.55; m.stOffset = 0.50; m.t = 0.55; m.coved = true; }
+    if (lead === "V4") { m.q = -0.10; m.r = 1.00; m.s = -0.20; m.stOffset = 0.40; m.t = 0.45; m.coved = true; }
+    if (["II","III","aVF"].includes(lead)) {
+      m.stOffset = -0.12;                     // reciprocal depression
+    }
+  }
+
+  // ----- Inferior MI: coved STE II/III/aVF, modest Q, recip I/aVL -----
+  if (caseDef.infMI) {
+    if (["II","III","aVF"].includes(lead)) {
+      m.q = -0.10; m.r = m.r * 0.75;
+      m.stOffset = 0.30; m.t = 0.42; m.coved = true;
+    }
+    if (["I","aVL"].includes(lead)) {
+      m.stOffset = -0.12;                     // reciprocal
+    }
+  }
+
+  // ----- LAD: tall R in I/aVL, deep S in II/III/aVF -----
+  if (caseDef.axis === "LAD") {
+    if (lead === "I")  { m.r = 1.10; m.s = -0.05; }
+    if (lead === "aVL"){ m.r = 0.90; m.s = -0.05; }
+    if (lead === "II") { m.r = 0.30; m.s = -0.80; }
+    if (lead === "III"){ m.r = 0.10; m.s = -1.00; }
+    if (lead === "aVF"){ m.r = 0.20; m.s = -0.90; }
+  }
+  // ----- RAD: dominant R inferior, S in I/aVL -----
+  if (caseDef.axis === "RAD") {
+    if (lead === "I")  { m.r = 0.20; m.s = -0.60; }
+    if (lead === "aVL"){ m.r = 0.05; m.s = -0.50; }
+    if (lead === "II") { m.r = 1.30; }
+    if (lead === "III"){ m.r = 1.20; m.s = 0; }
+    if (lead === "aVF"){ m.r = 1.20; }
+  }
+
+  return { m, t };
+}
+
+// Voltage at time `t` within a beat, given morphology and timing.
+function beatVoltage(tSec, m, tim) {
+  const pStart = 0;
+  const pEnd = pStart + tim.pDur;
+  const prEnd = pEnd + tim.prSeg;
+  const qEnd = prEnd + tim.qDur;
+  const qrsEnd = qEnd + tim.qrsCore;
+  const sEnd = qrsEnd + tim.sTail;
+  const stEnd = sEnd + tim.stSeg;
+  const tEnd = stEnd + tim.tDur;
+
+  // P wave (small lobed bump)
+  if (tSec < pEnd) {
+    return m.p * Math.sin(Math.PI * (tSec - pStart) / tim.pDur);
+  }
+  // PR segment
+  if (tSec < prEnd) return 0;
+  // Q (downstroke)
+  if (tSec < qEnd) {
+    const f = (tSec - prEnd) / tim.qDur;
+    return m.q * f;
+  }
+  // QRS core: q -> r (-> r' if BBB) -> s
+  if (tSec < qrsEnd) {
+    const f = (tSec - qEnd) / tim.qrsCore;     // 0..1
+    if (m.notchedR) {
+      // M-shape: q -> r -> small dip -> r2 -> s
+      if (f < 0.30) return m.q + (m.r - m.q) * (f / 0.30);
+      if (f < 0.45) return m.r - (m.r * 0.20) * ((f - 0.30) / 0.15);   // notch dip
+      if (f < 0.65) return m.r * 0.80 + (m.r * 0.20) * ((f - 0.45) / 0.20); // 2nd peak
+      return m.r + (m.s - m.r) * ((f - 0.65) / 0.35);                 // down to S
+    }
+    if (m.notchedS) {
+      // W-shape: q -> small r -> deep s -> small notch -> back
+      if (f < 0.20) return m.q + (m.r - m.q) * (f / 0.20);
+      if (f < 0.55) return m.r + (m.s - m.r) * ((f - 0.20) / 0.35);
+      if (f < 0.75) return m.s + (m.s * -0.20) * ((f - 0.55) / 0.20); // small notch up
+      return m.s * 0.85 + (0 - m.s * 0.85) * ((f - 0.75) / 0.25);
+    }
+    if (m.rPrime) {
+      // rsR': q -> small r -> s -> R' (taller) -> down
+      if (f < 0.18) return m.q + (m.r - m.q) * (f / 0.18);
+      if (f < 0.36) return m.r + (m.s - m.r) * ((f - 0.18) / 0.18);
+      if (f < 0.65) return m.s + (m.rPrime - m.s) * ((f - 0.36) / 0.29);
+      return m.rPrime + (0 - m.rPrime) * ((f - 0.65) / 0.35);
+    }
+    if (m.slurredS) {
+      // slow broad S
+      if (f < 0.22) return m.q + (m.r - m.q) * (f / 0.22);
+      if (f < 0.55) return m.r + (m.s - m.r) * ((f - 0.22) / 0.33);
+      return m.s + (0 - m.s) * Math.pow((f - 0.55) / 0.45, 1.5);
+    }
+    // Standard: q -> r (peak ~40%) -> s (~75%) -> J point (= stOffset, so the S wave
+    // rebounds smoothly into any ST shift instead of hitting baseline first).
+    if (f < 0.30) return m.q + (m.r - m.q) * (f / 0.30);
+    if (f < 0.55) return m.r + (m.s - m.r) * ((f - 0.30) / 0.25);
+    return m.s + (m.stOffset - m.s) * ((f - 0.55) / 0.45);
+  }
+  // S tail — hold at the J-point level (= stOffset) so the join is continuous.
+  if (tSec < sEnd) return m.stOffset;
+  // Coved ST + T as a single smooth tombstone curve (STEMI). The ST and T are
+  // not rendered as separate segments — they form one continuous bump from the
+  // elevated J point through the T-wave peak back to baseline.
+  if (m.coved && tSec < tEnd) {
+    const dur = tim.stSeg + tim.tDur;
+    const f = (tSec - sEnd) / dur;
+    const peakF = 0.58;
+    const peakV = m.stOffset + m.t;
+    if (f < peakF) {
+      return m.stOffset + (peakV - m.stOffset) * (1 - Math.cos(Math.PI * f / peakF)) / 2;
+    } else {
+      return peakV * (1 + Math.cos(Math.PI * (f - peakF) / (1 - peakF))) / 2;
+    }
+  }
+  // Standard ST segment (flat shelf at stOffset)
+  if (tSec < stEnd) return m.stOffset;
+  // Standard T wave
+  if (tSec < tEnd) {
+    const f = (tSec - stEnd) / tim.tDur;
+    return m.stOffset * (1 - f) + m.t * Math.sin(Math.PI * f);
+  }
+  // diastole / TP
+  return 0;
+}
+
+// Schedule beats for a case. Returns array of { tStart, prOverride?, dropQRS? }.
+// Each "beat" represents an atrial event (P wave); dropQRS means the AV node
+// failed to conduct that P → QRS (Wenckebach drop, etc.).
+function scheduleBeats(caseDef, durSec) {
+  const meanBeat = 60 / caseDef.rate;
+  const beats = [];
+  let cursor = 0.10;
+
+  if (caseDef.wenckebach) {
+    // Mobitz I, 4:3 cycle: PR lengthens 0.06 → 0.13 → 0.21 → DROP, then resets
+    const prCycle = [0.05, 0.13, 0.21, null];
+    let i = 0;
+    while (cursor < durSec + 0.5) {
+      const pr = prCycle[i % prCycle.length];
+      if (pr === null) beats.push({ tStart: cursor, prOverride: 0.07, dropQRS: true });
+      else beats.push({ tStart: cursor, prOverride: pr });
+      cursor += meanBeat;
+      i++;
+    }
+  } else if (caseDef.firstDegree) {
+    // Constant prolonged PR (~260 ms)
+    while (cursor < durSec + 0.5) {
+      beats.push({ tStart: cursor, prOverride: 0.17 });
+      cursor += meanBeat * (0.98 + Math.random() * 0.04);
+    }
+  } else {
+    while (cursor < durSec + 0.5) {
+      beats.push({ tStart: cursor });
+      if (caseDef.rhythm === "AF") {
+        cursor += meanBeat * (0.55 + Math.random() * 0.95);
+      } else if (caseDef.rhythm === "AFlutter") {
+        cursor += meanBeat * (0.95 + Math.random() * 0.10);
+      } else {
+        cursor += meanBeat * (0.98 + Math.random() * 0.04);
+      }
+    }
+  }
+  return beats;
+}
+
+// Build SVG path for a single lead window
+// width = pixels, height per lead = pixels
+// scaleX: px per second (= 25 mm/s × pxPerMm)
+// scaleY: px per mV (= 10 mm/mV × pxPerMm)
+function buildLeadPath(caseDef, lead, widthPx, heightPx, pxPerMm) {
+  const { m, t } = morphForCase(caseDef, lead);
+  const scaleX = 25 * pxPerMm;        // px/sec
+  const scaleY = 10 * pxPerMm;        // px/mV
+  const yMid = heightPx / 2;
+  const durSec = widthPx / scaleX;
+  const sampleHz = 500;
+  const samples = Math.floor(durSec * sampleHz);
+
+  const beats = scheduleBeats(caseDef, durSec);
+
+  // Render
+  let pathD = "";
+  for (let i = 0; i <= samples; i++) {
+    const tSec = i / sampleHz;
+    let v = 0;
+
+    // Find current beat (latest beat whose tStart <= tSec)
+    let beat = null;
+    for (let b = beats.length - 1; b >= 0; b--) {
+      if (tSec >= beats[b].tStart) { beat = beats[b]; break; }
+    }
+
+    if (beat) {
+      const tInBeat = tSec - beat.tStart;
+      const tim = beat.prOverride !== undefined
+        ? Object.assign({}, t, { prSeg: beat.prOverride })
+        : t;
+
+      if (beat.dropQRS) {
+        // Render only the P wave; ventricles silent until next P
+        if (tInBeat < tim.pDur) {
+          v = m.p * Math.sin(Math.PI * tInBeat / tim.pDur);
+        }
+      } else if (caseDef.rhythm === "AF") {
+        const mNoP = Object.assign({}, m, { p: 0 });
+        v = beatVoltage(tInBeat, mNoP, tim);
+        const fibAmp = (lead === "V1") ? 0.06 : 0.025;
+        const fib = fibAmp * (Math.sin(tSec * 14 * Math.PI) * 0.4
+                            + Math.sin(tSec * 22 * Math.PI + 1.7) * 0.3
+                            + Math.sin(tSec * 9 * Math.PI + 0.5) * 0.3);
+        const inQRS = (tInBeat > tim.pDur + tim.prSeg && tInBeat < tim.pDur + tim.prSeg + tim.qDur + tim.qrsCore + tim.sTail);
+        if (!inQRS) v += fib;
+      } else if (caseDef.rhythm === "AFlutter") {
+        const mNoP = Object.assign({}, m, { p: 0 });
+        v = beatVoltage(tInBeat, mNoP, tim);
+
+        // Flutter wave amplitude and polarity by lead.
+        // Typical (counter-clockwise) flutter — negative sawtooth in inferior leads,
+        // upright in V1 / aVR, low amplitude elsewhere.
+        let sawAmp, polarity;
+        if (["II","III","aVF"].includes(lead))     { sawAmp = 0.15; polarity =  1; }
+        else if (["V1","aVR"].includes(lead))      { sawAmp = 0.07; polarity = -1; }
+        else                                        { sawAmp = 0.03; polarity =  1; }
+
+        const flutterHz = 5; // 5 Hz = 300/min atrial
+        const phase = (tSec * flutterHz) % 1;
+
+        // Continuous sawtooth: smooth cosine descent (0 → -1) over 85 % of the cycle,
+        // then a sharp linear return (-1 → 0) over the last 15 %. No discontinuities.
+        let flutter;
+        if (phase < 0.85) {
+          flutter = -(1 - Math.cos(Math.PI * phase / 0.85)) / 2;
+        } else {
+          flutter = -1 + (phase - 0.85) / 0.15;
+        }
+        flutter = flutter * sawAmp * polarity;
+
+        // Suppress flutter during the QRS itself (it'd be lost in the QRS anyway).
+        const inQRS = (tInBeat > tim.pDur + tim.prSeg && tInBeat < tim.pDur + tim.prSeg + tim.qDur + tim.qrsCore + tim.sTail);
+        if (!inQRS) v += flutter;
+      } else {
+        v = beatVoltage(tInBeat, m, tim);
+      }
+    }
+
+    // tiny baseline noise
+    v += (Math.random() - 0.5) * 0.008;
+
+    const x = i / sampleHz * scaleX;
+    const y = yMid - v * scaleY;
+    pathD += (i === 0 ? "M" : "L") + x.toFixed(1) + " " + y.toFixed(1) + " ";
+  }
+  return pathD;
+}
+
+/* ---------- ECG GRID + LAYOUT ---------- */
+
+function renderECG(caseDef) {
+  const svg = document.getElementById("ecg");
+  svg.innerHTML = "";
+  const NS = "http://www.w3.org/2000/svg";
+
+  const pxPerMm = 7;
+  const cols = 4;
+  const rows = 3;
+  const leadW = 40 * pxPerMm;          // 40 mm wide → ~1.6 s, ~2.5 beats @ 75 bpm
+  const leadH = 22 * pxPerMm;          // 22 mm tall → ±1.1 mV (room for tall R waves)
+  const gridW = cols * leadW;
+  const gridH = rows * leadH;
+  const rhythmH = 22 * pxPerMm;
+  const totalW = gridW;
+  const totalH = gridH + rhythmH + 12;
+
+  svg.setAttribute("width", totalW);
+  svg.setAttribute("height", totalH);
+  svg.setAttribute("viewBox", `0 0 ${totalW} ${totalH}`);
+
+  // Grid pattern
+  const defs = document.createElementNS(NS, "defs");
+  defs.innerHTML = `
+    <pattern id="smallGrid" width="${pxPerMm}" height="${pxPerMm}" patternUnits="userSpaceOnUse">
+      <path d="M ${pxPerMm} 0 L 0 0 0 ${pxPerMm}" fill="none" stroke="#f8c8c8" stroke-width="0.4"/>
+    </pattern>
+    <pattern id="bigGrid" width="${pxPerMm*5}" height="${pxPerMm*5}" patternUnits="userSpaceOnUse">
+      <rect width="${pxPerMm*5}" height="${pxPerMm*5}" fill="url(#smallGrid)"/>
+      <path d="M ${pxPerMm*5} 0 L 0 0 0 ${pxPerMm*5}" fill="none" stroke="#e89090" stroke-width="0.9"/>
+    </pattern>
+  `;
+  svg.appendChild(defs);
+
+  const bg = document.createElementNS(NS, "rect");
+  bg.setAttribute("width", totalW);
+  bg.setAttribute("height", totalH);
+  bg.setAttribute("fill", "url(#bigGrid)");
+  svg.appendChild(bg);
+
+  // Lead order (standard cabrera-ish 4×3)
+  const layout = [
+    ["I","aVR","V1","V4"],
+    ["II","aVL","V2","V5"],
+    ["III","aVF","V3","V6"]
+  ];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const lead = layout[r][c];
+      const x0 = c * leadW;
+      const y0 = r * leadH;
+
+      // Wrap each lead's trace in a nested <svg> with explicit width/height —
+      // this creates a clipping viewport so a very tall LVH R wave (or a deep S)
+      // can't bleed into the row above/below.
+      const leadSvg = document.createElementNS(NS, "svg");
+      leadSvg.setAttribute("x", x0 + 3);
+      leadSvg.setAttribute("y", y0);
+      leadSvg.setAttribute("width", leadW - 6);
+      leadSvg.setAttribute("height", leadH);
+
+      const path = document.createElementNS(NS, "path");
+      const d = buildLeadPath(caseDef, lead, leadW - 6, leadH, pxPerMm);
+      path.setAttribute("d", d);
+      path.setAttribute("stroke", "#0d0d0d");
+      path.setAttribute("stroke-width", "1.4");
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke-linejoin", "round");
+      leadSvg.appendChild(path);
+      svg.appendChild(leadSvg);
+
+      // Lead label (in the outer svg so it sits on top of the grid, not inside the clip)
+      const lbl = document.createElementNS(NS, "text");
+      lbl.setAttribute("x", x0 + 8);
+      lbl.setAttribute("y", y0 + 18);
+      lbl.setAttribute("class", "lead-label");
+      lbl.textContent = lead;
+      svg.appendChild(lbl);
+    }
+  }
+
+  // Rhythm strip — Lead II, full width, with single calibration pulse at start
+  const rhythmY = gridH + 12;
+  const calW = 5 * pxPerMm;
+  const calH = 10 * pxPerMm;
+  const calY = rhythmY + rhythmH / 2;
+  const calX = 4;
+
+  const cal = document.createElementNS(NS, "path");
+  const calD = `M ${calX} ${calY} L ${calX} ${calY - calH/2} L ${calX + calW} ${calY - calH/2} L ${calX + calW} ${calY} L ${calX + calW + 4} ${calY}`;
+  cal.setAttribute("d", calD);
+  cal.setAttribute("stroke", "#0d0d0d");
+  cal.setAttribute("stroke-width", "1.4");
+  cal.setAttribute("fill", "none");
+  svg.appendChild(cal);
+
+  const rPath = document.createElementNS(NS, "path");
+  const rTraceX = calX + calW + 8;
+  const rD = buildLeadPath(caseDef, "II", totalW - rTraceX - 4, rhythmH, pxPerMm);
+  rPath.setAttribute("d", rD);
+  rPath.setAttribute("transform", `translate(${rTraceX},${rhythmY})`);
+  rPath.setAttribute("stroke", "#0d0d0d");
+  rPath.setAttribute("stroke-width", "1.4");
+  rPath.setAttribute("fill", "none");
+  svg.appendChild(rPath);
+
+  const rLbl = document.createElementNS(NS, "text");
+  rLbl.setAttribute("x", 8);
+  rLbl.setAttribute("y", rhythmY + 18);
+  rLbl.setAttribute("class", "lead-label");
+  rLbl.textContent = "II  (rhythm)";
+  svg.appendChild(rLbl);
+}
+
+/* ---------- CASES ---------- */
+
+const CASES = [
+  {
+    title: "Case 1 — Routine pre-op",
+    vignette: "62-year-old woman seen in pre-admission clinic. Asymptomatic.",
+    rate: 75,
+    rhythm: "Sinus",
+    axis: "Normal",
+    qrsBand: "Narrow",
+    hypertrophy: "None",
+    ischaemia: "None",
+    diagnosis: "Normal sinus rhythm — no abnormality detected",
+    teach: "Rate ~75. Regular. P before every QRS, upright in II — sinus. Axis normal (I and II both positive). QRS narrow. No voltage criteria for hypertrophy. No Q waves, no ST changes, no T inversion."
+  },
+  {
+    title: "Case 2 — Palpitations",
+    vignette: "78-year-old man on the ward, irregular pulse on routine obs.",
+    rate: 110, rhythm: "AF", axis: "Normal", qrsBand: "Narrow",
+    hypertrophy: "None", ischaemia: "None",
+    diagnosis: "Atrial fibrillation with rapid ventricular response",
+    teach: "Irregularly irregular RR with absent P waves — classic AF. Coarse fibrillation baseline most visible in V1. Rate >100 = AF with RVR."
+  },
+  {
+    title: "Case 3 — Sudden chest pain",
+    vignette: "58-year-old smoker, 1 hour of crushing central chest pain.",
+    rate: 95, rhythm: "Sinus", axis: "Normal", qrsBand: "Narrow",
+    hypertrophy: "None", ischaemia: "AnteriorSTEMI",
+    antMI: true,
+    diagnosis: "Anterior STEMI",
+    teach: "ST elevation in V1–V4 with hyperacute T waves and developing Q waves. Reciprocal ST depression inferiorly. This is a STEMI — activate the cath lab."
+  },
+  {
+    title: "Case 4 — Wide complex on telemetry",
+    vignette: "70-year-old, hypertensive, attending heart failure clinic.",
+    rate: 80, rhythm: "Sinus", axis: "Normal", qrsBand: "Wide",
+    conduction: "LBBB",
+    lbbb: true,
+    hypertrophy: "None", ischaemia: "None",
+    diagnosis: "Left bundle branch block",
+    teach: "Wide QRS (>120 ms). Broad notched (M-shape) R in V5/V6, I, aVL. Deep wide S (W-shape) in V1/V2. Discordant T waves. WiLLiaM — W in V1, M in V6 = LBBB. Note: ischaemia cannot be reliably assessed on the surface ECG once there's LBBB (use Sgarbossa criteria if MI suspected)."
+  },
+  {
+    title: "Case 5 — Routine ECG",
+    vignette: "55-year-old male, asymptomatic, found on insurance medical.",
+    rate: 75, rhythm: "Sinus", axis: "Normal", qrsBand: "Wide",
+    conduction: "RBBB",
+    rbbb: true,
+    hypertrophy: "None", ischaemia: "None",
+    diagnosis: "Right bundle branch block",
+    teach: "Wide QRS. rsR' (M-shape) in V1. Slurred broad S in I and V6. T-wave inversion V1–V3. MaRRoW — M in V1, W in V6 = RBBB."
+  },
+  {
+    title: "Case 6 — Long-standing hypertension",
+    vignette: "65-year-old with poorly-controlled BP for 15 years.",
+    rate: 70, rhythm: "Sinus", axis: "LAD", qrsBand: "Narrow",
+    hypertrophy: "LVH",
+    lvh: true,
+    axis: "LAD",
+    ischaemia: "None",
+    diagnosis: "Left ventricular hypertrophy with strain",
+    teach: "Tall R in V5/V6 + deep S in V1/V2 (Sokolow–Lyon: SV1 + RV5 > 35 mm). Lateral T-wave inversion and ST depression = strain pattern. Often associated with left axis deviation."
+  },
+  {
+    title: "Case 7 — Inferior chest pain",
+    vignette: "63-year-old woman, 90 min of epigastric pain and nausea.",
+    rate: 62, rhythm: "Sinus", axis: "Normal", qrsBand: "Narrow",
+    hypertrophy: "None", ischaemia: "InferiorMI",
+    infMI: true,
+    diagnosis: "Inferior STEMI",
+    teach: "ST elevation in II, III and aVF with developing Q waves. Reciprocal ST depression in I and aVL. Bradycardia (AV node ischaemia from RCA territory) — classic inferior MI pattern. Always check a posterior/right-sided lead set."
+  },
+  {
+    title: "Case 8 — Increasing breathlessness",
+    vignette: "45-year-old with chronic lung disease, worsening exertional dyspnoea.",
+    rate: 92, rhythm: "Sinus", axis: "RAD", qrsBand: "Narrow",
+    hypertrophy: "RVH",
+    rvh: true,
+    ischaemia: "None",
+    diagnosis: "Right ventricular hypertrophy (cor pulmonale picture)",
+    teach: "Right axis deviation. Dominant R in V1 (R/S > 1) with deep S in V6. T-wave inversion V1–V3 (RV strain). Suggests pulmonary hypertension / chronic lung disease."
+  },
+  {
+    title: "Case 9 — Pre-op ECG, on bisoprolol",
+    vignette: "78-year-old man, asymptomatic, routine pre-op ECG.",
+    rate: 65, rhythm: "Sinus", axis: "Normal", qrsBand: "Narrow",
+    av: "First", firstDegree: true,
+    hypertrophy: "None", ischaemia: "None",
+    diagnosis: "Sinus rhythm with first-degree AV block",
+    teach: "PR interval prolonged (>200 ms = >1 large square) but every P is followed by a QRS. Common with rate-controlling drugs (β-blockers, CCBs, digoxin) and with age-related conduction system disease. Usually benign; review medications."
+  },
+  {
+    title: "Case 10 — Day 2 post-inferior MI",
+    vignette: "65-year-old on telemetry following inferior STEMI 24 h ago.",
+    rate: 80, rhythm: "Sinus", axis: "Normal", qrsBand: "Narrow",
+    av: "MobitzI", wenckebach: true,
+    hypertrophy: "None", ischaemia: "None",
+    diagnosis: "Mobitz I (Wenckebach) second-degree AV block",
+    teach: "Progressive PR-interval lengthening across consecutive beats until a QRS is dropped, then the cycle resets — classic Wenckebach. Often transient and benign in inferior MI (AV nodal ischaemia from RCA territory) and rarely requires pacing; contrast with Mobitz II which usually does."
+  },
+  {
+    title: "Case 11 — Sudden palpitations",
+    vignette: "67-year-old, abrupt onset palpitations and mild chest discomfort. Pulse 150, regular.",
+    rate: 150, rhythm: "AFlutter", axis: "Normal", qrsBand: "Narrow",
+    av: "Normal",
+    hypertrophy: "None", ischaemia: "None",
+    diagnosis: "Atrial flutter with 2:1 AV conduction",
+    teach: "Sawtooth flutter waves at ~300/min (best seen in II/III/aVF and V1) with a ventricular rate of exactly 150 — that combination should always trigger suspicion of 2:1 atrial flutter. Vagal manoeuvres or adenosine transiently slow AV conduction and unmask the flutter waves."
+  }
+];
+
+/* ---------- WORKFLOW ENGINE ---------- */
+
+const STEPS = [
+  {
+    key: "rate",
+    title: "Step 1 · Rate",
+    prompt: "Estimate the ventricular rate from the rhythm strip.",
+    options: caseDef => {
+      const r = caseDef.rate;
+      // Build distractors around the truth in 20 bpm bins.
+      const truth = bandRate(r);
+      const all = ["Bradycardia (<60)", "Normal (60–100)", "Tachycardia (100–150)", "Marked tachycardia (>150)"];
+      return all.map(o => ({ label: o, correct: o === truth }));
+    },
+    explain: caseDef => `Measured rate ≈ ${caseDef.rate} bpm — ${bandRate(caseDef.rate)}.`
+  },
+  {
+    key: "rhythm",
+    title: "Step 2 · Rhythm",
+    prompt: "Is the rhythm regular? Are there P waves before every QRS?",
+    options: caseDef => {
+      const truth = caseDef.rhythm;
+      const all = [
+        { label: "Sinus rhythm", val: "Sinus" },
+        { label: "Atrial fibrillation", val: "AF" },
+        { label: "Atrial flutter", val: "AFlutter" },
+        { label: "Other / non-sinus", val: "Other" }
+      ];
+      return all.map(o => ({ label: o.label, correct: o.val === truth }));
+    },
+    explain: caseDef => {
+      if (caseDef.rhythm === "Sinus") return "Regular RR with a P wave before every QRS, upright in II — sinus.";
+      if (caseDef.rhythm === "AF") return "Irregularly irregular RR and absent P waves — atrial fibrillation.";
+      if (caseDef.rhythm === "AFlutter") return "Sawtooth flutter waves at ~300/min, often with 2:1 or 4:1 conduction.";
+      return "Non-sinus rhythm.";
+    }
+  },
+  {
+    key: "av",
+    title: "Step 3 · PR interval / AV conduction",
+    prompt: "Measure the PR interval. Is each P wave followed by a QRS? Look for prolongation, progressive lengthening, or dropped beats — or recognise when there are no organised P waves to measure from.",
+    options: caseDef => {
+      // For AF / flutter the correct answer is that PR is not assessable.
+      let truth = caseDef.av || "Normal";
+      if (caseDef.rhythm === "AF" || caseDef.rhythm === "AFlutter") truth = "NA";
+      const all = [
+        { label: "Normal PR (120–200 ms), 1:1 conduction", val: "Normal" },
+        { label: "First-degree AV block (PR >200 ms)", val: "First" },
+        { label: "Mobitz I (Wenckebach) — progressive PR lengthening then dropped QRS", val: "MobitzI" },
+        { label: "Mobitz II — constant PR with intermittent dropped QRS", val: "MobitzII" },
+        { label: "Complete (third-degree) AV block — AV dissociation", val: "Complete" },
+        { label: "Not assessable — no organised P waves", val: "NA" }
+      ];
+      return all.map(o => ({ label: o.label, correct: o.val === truth }));
+    },
+    explain: caseDef => {
+      if (caseDef.rhythm === "AF") return "There are no organised P waves in atrial fibrillation, so PR cannot be measured. In a viva, say so explicitly rather than estimating — it shows you've recognised the rhythm.";
+      if (caseDef.rhythm === "AFlutter") return "Continuous flutter waves replace discrete P waves, so PR is not measurable in the usual sense. You'd describe the AV conduction ratio instead (e.g. 2:1 in this case — atrial 300, ventricular 150).";
+      const a = caseDef.av || "Normal";
+      if (a === "Normal")  return "PR interval 120–200 ms (3–5 small squares), 1:1 AV conduction.";
+      if (a === "First")   return "PR is fixed but >200 ms (>1 large square) — first-degree AV block. Every P still conducts.";
+      if (a === "MobitzI") return "PR lengthens progressively across the cycle, then a QRS is dropped, then the cycle resets — Wenckebach. Look at the rhythm strip across several beats to spot it.";
+      if (a === "MobitzII")return "Constant normal PR with sudden dropped QRS — Mobitz II. Higher risk of progression to complete heart block; usually warrants pacing.";
+      return "P waves and QRS complexes march out independently — AV dissociation = complete heart block.";
+    }
+  },
+  {
+    key: "axis",
+    title: "Step 4 · Axis",
+    prompt: "Look at leads I and II. What is the QRS axis?",
+    options: caseDef => {
+      const truth = caseDef.axis || "Normal";
+      const all = [
+        { label: "Normal axis", val: "Normal" },
+        { label: "Left axis deviation (LAD)", val: "LAD" },
+        { label: "Right axis deviation (RAD)", val: "RAD" },
+        { label: "Extreme axis", val: "Extreme" }
+      ];
+      return all.map(o => ({ label: o.label, correct: o.val === truth }));
+    },
+    explain: caseDef => {
+      const a = caseDef.axis || "Normal";
+      if (a === "Normal") return "I positive, II positive → normal axis.";
+      if (a === "LAD")    return "I positive, II/aVF negative → left axis deviation. Common with LVH, LAFB, inferior MI.";
+      if (a === "RAD")    return "I negative, II/aVF positive → right axis deviation. Think RVH, PE, lateral MI, normal in young thin people.";
+      return "Extreme axis (north-west) — both I and aVF negative.";
+    }
+  },
+  {
+    key: "conduction",
+    title: "Step 5 · QRS width / Bundle branches",
+    prompt: "Measure QRS width. If wide (>120 ms), is the morphology LBBB or RBBB?",
+    options: caseDef => {
+      const truth = caseDef.conduction || "Narrow";
+      const all = [
+        { label: "Narrow QRS — no conduction abnormality", val: "Narrow" },
+        { label: "Left bundle branch block (LBBB)", val: "LBBB" },
+        { label: "Right bundle branch block (RBBB)", val: "RBBB" },
+        { label: "Non-specific intraventricular conduction delay", val: "IVCD" }
+      ];
+      return all.map(o => ({ label: o.label, correct: o.val === truth }));
+    },
+    explain: caseDef => {
+      const c = caseDef.conduction || "Narrow";
+      if (c === "Narrow") return "QRS < 120 ms — no bundle branch block.";
+      if (c === "LBBB")   return "WiLLiaM — wide QRS, W-shape in V1, M-shape in V6 = LBBB.";
+      if (c === "RBBB")   return "MaRRoW — wide QRS, M-shape (rsR') in V1, slurred S in V6 = RBBB.";
+      return "Wide QRS without typical BBB pattern.";
+    }
+  },
+  {
+    key: "hypertrophy",
+    title: "Step 6 · Hypertrophy",
+    prompt: "Apply voltage criteria — Sokolow–Lyon for LVH, dominant R in V1 for RVH.",
+    options: caseDef => {
+      const truth = caseDef.hypertrophy || "None";
+      const all = [
+        { label: "No hypertrophy", val: "None" },
+        { label: "Left ventricular hypertrophy (LVH)", val: "LVH" },
+        { label: "Right ventricular hypertrophy (RVH)", val: "RVH" },
+        { label: "Biventricular hypertrophy", val: "Biventricular" }
+      ];
+      return all.map(o => ({ label: o.label, correct: o.val === truth }));
+    },
+    explain: caseDef => {
+      const h = caseDef.hypertrophy || "None";
+      if (h === "None") return "Voltages within normal limits — no hypertrophy.";
+      if (h === "LVH")  return "SV1 + RV5/V6 > 35 mm meets Sokolow–Lyon. Lateral T inversion = strain.";
+      if (h === "RVH")  return "Dominant R in V1 (R/S > 1) with right axis deviation and right precordial strain — RVH.";
+      return "Voltage criteria for both ventricles.";
+    }
+  },
+  {
+    key: "ischaemia",
+    title: "Step 7 · Ischaemia / Infarction",
+    prompt: "Inspect each territory for ST elevation, ST depression, T-wave inversion or pathological Q waves.",
+    options: caseDef => {
+      const truth = caseDef.ischaemia || "None";
+      const all = [
+        { label: "No ischaemic changes", val: "None" },
+        { label: "Anterior STEMI (V1–V4)", val: "AnteriorSTEMI" },
+        { label: "Inferior STEMI (II, III, aVF)", val: "InferiorMI" },
+        { label: "Lateral / non-territorial ischaemia", val: "Other" }
+      ];
+      return all.map(o => ({ label: o.label, correct: o.val === truth }));
+    },
+    explain: caseDef => {
+      const i = caseDef.ischaemia || "None";
+      if (i === "None") return "No pathological Q waves, no ST shift, no T-wave inversion in territorial pattern.";
+      if (i === "AnteriorSTEMI") return "ST elevation V1–V4 with reciprocal inferior depression — anterior STEMI (LAD).";
+      if (i === "InferiorMI")    return "ST elevation II/III/aVF with reciprocal I/aVL depression — inferior STEMI (RCA territory in 80%).";
+      return "Localised changes not fitting a single coronary territory.";
+    }
+  },
+  {
+    key: "diagnosis",
+    title: "Step 8 · Final synthesis",
+    prompt: "Putting it all together — what's the overall ECG diagnosis?",
+    options: caseDef => {
+      // Build options dynamically: correct dx + 3 distractors
+      const truth = caseDef.diagnosis;
+      const pool = CASES.map(c => c.diagnosis).filter(d => d !== truth);
+      // Pick 3 distractors deterministically by case index for replayability
+      const distractors = shuffle([...pool]).slice(0, 3);
+      const all = shuffle([truth, ...distractors]);
+      return all.map(d => ({ label: d, correct: d === truth }));
+    },
+    explain: caseDef => caseDef.teach
+  }
+];
+
+function bandRate(r) {
+  if (r < 60) return "Bradycardia (<60)";
+  if (r <= 100) return "Normal (60–100)";
+  if (r <= 150) return "Tachycardia (100–150)";
+  return "Marked tachycardia (>150)";
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ---------- GAME STATE ---------- */
+
+const state = {
+  caseIdx: 0,
+  stepIdx: 0,
+  score: 0,
+  maxScore: 0,
+  caseHistory: [],   // {step, ok, label}
+  finished: false
+};
+
+function startCase() {
+  state.stepIdx = 0;
+  state.caseHistory = [];
+  const c = CASES[state.caseIdx];
+  document.getElementById("caseIdx").textContent = state.caseIdx + 1;
+  document.getElementById("caseTotal").textContent = CASES.length;
+  document.getElementById("caseTitle").textContent = c.title;
+  document.getElementById("caseVignette").textContent = c.vignette;
+  renderECG(c);
+  renderStep();
+}
+
+function renderStep() {
+  const c = CASES[state.caseIdx];
+  const step = STEPS[state.stepIdx];
+  const opts = step.options(c);
+
+  const container = document.getElementById("workflow");
+  container.innerHTML = `
+    <div class="step-header">
+      <span class="step-num">${state.stepIdx + 1}</span>
+      <span class="step-title">${step.title}</span>
+    </div>
+    <div class="step-prompt">${step.prompt}</div>
+    <div class="options" id="opts"></div>
+    <div class="feedback" id="fb"></div>
+    <div class="actions" id="actions"></div>
+    ${state.caseHistory.length ? renderHistory() : ""}
+  `;
+
+  const optsEl = document.getElementById("opts");
+  opts.forEach((o, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.textContent = o.label;
+    btn.onclick = () => answer(i, opts);
+    optsEl.appendChild(btn);
+  });
+}
+
+function renderHistory() {
+  const items = state.caseHistory.map(h => {
+    const icon = h.ok ? '<span class="ok-tick">✓</span>' : '<span class="no-cross">✗</span>';
+    return `<div>${icon} <b>${h.step}</b>: ${h.label}</div>`;
+  }).join("");
+  return `<div class="step-history"><div style="margin-bottom:6px;color:#c9d1d9;font-weight:600;">This case so far</div>${items}</div>`;
+}
+
+function answer(idx, opts) {
+  const c = CASES[state.caseIdx];
+  const step = STEPS[state.stepIdx];
+  const optsEl = document.getElementById("opts");
+  const buttons = [...optsEl.querySelectorAll("button")];
+  const chosen = opts[idx];
+  const correctIdx = opts.findIndex(o => o.correct);
+
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === correctIdx) b.classList.add("correct");
+    if (i === idx && !chosen.correct) b.classList.add("wrong");
+  });
+
+  state.maxScore++;
+  if (chosen.correct) state.score++;
+  state.caseHistory.push({
+    step: step.title.replace(/^Step \d+ · /, ""),
+    ok: chosen.correct,
+    label: chosen.correct ? chosen.label : `${chosen.label} (correct: ${opts[correctIdx].label})`
+  });
+
+  document.getElementById("scoreNow").textContent = state.score;
+  document.getElementById("scoreMax").textContent = state.maxScore;
+
+  const fb = document.getElementById("fb");
+  fb.classList.add("show");
+  fb.classList.add(chosen.correct ? "ok" : "no");
+  fb.innerHTML = (chosen.correct ? "<b>Correct.</b> " : "<b>Not quite.</b> ") + step.explain(c);
+
+  const actions = document.getElementById("actions");
+  if (state.stepIdx < STEPS.length - 1) {
+    const next = document.createElement("button");
+    next.className = "btn";
+    next.textContent = "Next step →";
+    next.onclick = () => { state.stepIdx++; renderStep(); };
+    actions.appendChild(next);
+  } else {
+    // End of case
+    if (state.caseIdx < CASES.length - 1) {
+      const next = document.createElement("button");
+      next.className = "btn";
+      next.textContent = "Next case →";
+      next.onclick = () => { state.caseIdx++; startCase(); };
+      actions.appendChild(next);
+    } else {
+      const finish = document.createElement("button");
+      finish.className = "btn";
+      finish.textContent = "Finish & see results";
+      finish.onclick = showSummary;
+      actions.appendChild(finish);
+    }
+  }
+
+  // Update history block live
+  const wf = document.getElementById("workflow");
+  if (!wf.querySelector(".step-history")) {
+    wf.insertAdjacentHTML("beforeend", renderHistory());
+  } else {
+    wf.querySelector(".step-history").outerHTML = renderHistory();
+  }
+}
+
+function showSummary() {
+  const pct = Math.round((state.score / state.maxScore) * 100);
+  let badge = "Keep practising — review each case's teaching points.";
+  if (pct >= 90) badge = "Outstanding — examiner-ready.";
+  else if (pct >= 75) badge = "Strong performance — polish the trickier patterns.";
+  else if (pct >= 60) badge = "Solid foundation — drill the abnormal traces.";
+
+  document.getElementById("workflow").innerHTML = `
+    <div class="summary">
+      <h2>Session complete</h2>
+      <div class="big-score">${state.score} / ${state.maxScore}</div>
+      <div style="font-size:18px;color:#c9d1d9;">${pct}% — ${badge}</div>
+      <p style="color:#8b949e;margin-top:18px;">You worked through ${CASES.length} cases applying the structured approach: rate → rhythm → AV conduction → axis → QRS width → hypertrophy → ischaemia → synthesis.</p>
+      <button class="btn" onclick="restart()">Restart with new ECGs</button>
+    </div>
+  `;
+  document.querySelector(".case-banner").style.display = "none";
+  document.querySelector(".ecg-wrap").style.display = "none";
+  document.querySelector(".legend").style.display = "none";
+}
+
+function restart() {
+  state.caseIdx = 0;
+  state.stepIdx = 0;
+  state.score = 0;
+  state.maxScore = 0;
+  state.caseHistory = [];
+  document.querySelector(".case-banner").style.display = "";
+  document.querySelector(".ecg-wrap").style.display = "";
+  document.querySelector(".legend").style.display = "";
+  document.getElementById("scoreNow").textContent = 0;
+  document.getElementById("scoreMax").textContent = 0;
+  // Re-shuffle case order for replayability
+  CASES.sort(() => Math.random() - 0.5);
+  startCase();
+}
+
+/* ---------- BOOT ---------- */
+startCase();
+</script>
+</body>
+</html>
