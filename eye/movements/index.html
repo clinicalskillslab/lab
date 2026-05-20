@@ -575,16 +575,20 @@
   <p class="intro-desc">
     Move the cursor across the screen to examine the patient's eye movements.
     Identify the cranial nerve palsy — or lack thereof — from the gaze pattern.
-    8 rounds, all classic presentations.
+    12 rounds, all classic presentations.
   </p>
   <div class="scenarios-grid">
-    <div class="scenario-chip"><span>CN III</span>Right Palsy</div>
-    <div class="scenario-chip"><span>CN III</span>Left Palsy</div>
+    <div class="scenario-chip"><span>CN III</span>R · Pupil-Involving</div>
+    <div class="scenario-chip"><span>CN III</span>L · Pupil-Involving</div>
+    <div class="scenario-chip"><span>CN III</span>R · Pupil-Sparing</div>
+    <div class="scenario-chip"><span>CN III</span>L · Pupil-Sparing</div>
     <div class="scenario-chip"><span>CN IV</span>Right Palsy</div>
     <div class="scenario-chip"><span>CN IV</span>Left Palsy</div>
     <div class="scenario-chip"><span>CN VI</span>Right Palsy</div>
     <div class="scenario-chip"><span>CN VI</span>Left Palsy</div>
     <div class="scenario-chip"><span>INO</span>Right-sided</div>
+    <div class="scenario-chip"><span>INO</span>Left-sided</div>
+    <div class="scenario-chip"><span>INO</span>Bilateral</div>
     <div class="scenario-chip"><span>Normal</span>Conjugate</div>
   </div>
   <button class="btn-start" id="btn-start">Begin Examination →</button>
@@ -604,9 +608,9 @@
   </div>
 
   <div class="progress-row">
-    <span class="progress-text" id="round-text">Round 1 of 8</span>
+    <span class="progress-text" id="round-text">Round 1 of 12</span>
     <div class="progress-bar-bg">
-      <div class="progress-bar-fill" id="progress-fill" style="width:12.5%"></div>
+      <div class="progress-bar-fill" id="progress-fill" style="width:8.33%"></div>
     </div>
     <div class="round-dots" id="round-dots"></div>
   </div>
@@ -649,7 +653,7 @@
   <div class="results-title" id="results-title">Examination Complete</div>
   <div class="results-score-ring">
     <div class="results-score-big" id="results-score">0</div>
-    <div class="results-score-denom">out of 8</div>
+    <div class="results-score-denom" id="results-score-denom">out of 12</div>
   </div>
   <div class="results-breakdown" id="results-breakdown"></div>
   <p class="results-msg" id="results-msg"></p>
@@ -719,12 +723,14 @@ const SCENARIOS = [
   },
   {
     id: 'cn3_right',
-    name: 'Right CN 3 Palsy',
-    description: `<strong>Right CN III (oculomotor) palsy</strong> — paralysis of SR, IR, MR, and IO, plus ptosis and a dilated unreactive pupil. The right eye rests in a <em>down-and-out</em> position due to unopposed action of the lateral rectus (CN VI) and superior oblique (CN IV). Adduction, elevation, and depression are all absent or severely limited.`,
+    name: 'Right CN 3 Palsy (Pupil-Involving)',
+    description: `<strong>Right CN III (oculomotor) palsy with pupil involvement</strong> — paralysis of SR, IR, MR, IO and levator palpebrae, with ptosis and a <em>dilated, unreactive ("blown") pupil</em>. The right eye rests <em>down and out</em> due to unopposed action of the lateral rectus (CN VI) and superior oblique (CN IV). A dilated pupil suggests a <em>compressive</em> cause, because the parasympathetic pupillomotor fibres run on the outer surface of CN III and are affected first by external compression — classically a <em>posterior communicating artery (PCom) aneurysm</em>, uncal herniation, or tumour. This is a neurosurgical emergency until proven otherwise.`,
     gazeR: (nx, ny) => {
-      // Right eye stuck mostly down-out; very limited movement
+      // Right eye stuck DOWN and OUT. For the right eye, "out" (abduction) means the
+      // iris moves to the patient's right = observer's LEFT = NEGATIVE x.
+      // Down = positive y. Residual movement is minimal.
       return {
-        x: MAX_X * 0.55 + Math.tanh(nx*2.2)*MAX_X*0.1,
+        x: -MAX_X * 0.55 + Math.tanh(nx*2.2)*MAX_X*0.1,
         y: MAX_Y * 0.7 + Math.tanh(ny*2.2)*MAX_Y*0.1
       };
     },
@@ -734,17 +740,47 @@ const SCENARIOS = [
   },
   {
     id: 'cn3_left',
-    name: 'Left CN 3 Palsy',
-    description: `<strong>Left CN III (oculomotor) palsy</strong> — the left eye rests <em>down and out</em>. Ptosis, a dilated unreactive pupil, and absence of adduction, elevation, and depression characterise this presentation. CN VI and CN IV are intact.`,
+    name: 'Left CN 3 Palsy (Pupil-Involving)',
+    description: `<strong>Left CN III (oculomotor) palsy with pupil involvement</strong> — the left eye rests <em>down and out</em> with ptosis and a <em>dilated, unreactive pupil</em>. Adduction, elevation and depression are lost; CN VI and CN IV are intact. A "blown" pupil points to a <em>compressive</em> aetiology because the parasympathetic pupillomotor fibres travel on the surface of CN III — classically a <em>posterior communicating artery aneurysm</em>, uncal herniation, or tumour. Always treat as a neurosurgical emergency until imaging excludes a compressive lesion.`,
     gazeR: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
     gazeL: (nx, ny) => {
+      // Left eye stuck DOWN and OUT. For the left eye, "out" (abduction) means the
+      // iris moves to the patient's left = observer's RIGHT = POSITIVE x.
       return {
-        x: -MAX_X * 0.55 + Math.tanh(nx*2.2)*MAX_X*0.1,
+        x: MAX_X * 0.55 + Math.tanh(nx*2.2)*MAX_X*0.1,
         y: MAX_Y * 0.7 + Math.tanh(ny*2.2)*MAX_Y*0.1
       };
     },
     ptosisL: true,
     pupilL: 'dilated',
+  },
+  {
+    id: 'cn3_right_sparing',
+    name: 'Right CN 3 Palsy (Pupil-Sparing)',
+    description: `<strong>Right CN III palsy with pupil sparing</strong> — ptosis and a <em>down-and-out</em> resting position of the right eye, but the pupil is <em>normal in size and reactive</em>. The pupillomotor (parasympathetic) fibres run on the <em>outer surface</em> of CN III and have a separate pial blood supply, so they are typically spared by <em>ischaemic / microvascular</em> lesions — classically <em>diabetes mellitus</em>, hypertension and other small-vessel disease in older adults. Pupil sparing makes a compressive lesion (e.g. PCom aneurysm) less likely, although neuroimaging is usually still warranted, especially if features evolve.`,
+    gazeR: (nx, ny) => {
+      return {
+        x: -MAX_X * 0.55 + Math.tanh(nx*2.2)*MAX_X*0.1,
+        y: MAX_Y * 0.7 + Math.tanh(ny*2.2)*MAX_Y*0.1
+      };
+    },
+    gazeL: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+    ptosisR: true,
+    // Pupil deliberately NOT dilated → normal reactive pupil
+  },
+  {
+    id: 'cn3_left_sparing',
+    name: 'Left CN 3 Palsy (Pupil-Sparing)',
+    description: `<strong>Left CN III palsy with pupil sparing</strong> — ptosis and a <em>down-and-out</em> resting position of the left eye, but the pupil is <em>normal in size and briskly reactive</em>. Sparing of the pupil suggests an <em>ischaemic / microvascular</em> cause (diabetes, hypertension, atherosclerosis) because the surface-running pupillomotor fibres receive a separate vascular supply and are relatively protected from infarction. Compressive lesions such as PCom aneurysms tend to produce a <em>dilated</em> pupil. Imaging is still indicated in most cases, particularly in younger patients or where the picture evolves.`,
+    gazeR: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+    gazeL: (nx, ny) => {
+      return {
+        x: MAX_X * 0.55 + Math.tanh(nx*2.2)*MAX_X*0.1,
+        y: MAX_Y * 0.7 + Math.tanh(ny*2.2)*MAX_Y*0.1
+      };
+    },
+    ptosisL: true,
+    // Pupil deliberately NOT dilated → normal reactive pupil
   },
   {
     id: 'cn4_right',
@@ -774,19 +810,58 @@ const SCENARIOS = [
   },
   {
     id: 'ino_right',
-    name: 'Internuclear Ophthalmoplegia',
+    name: 'Right INO',
     description: `<strong>Right-sided INO (internuclear ophthalmoplegia)</strong> — a lesion of the <em>right MLF</em> (medial longitudinal fasciculus) disconnects the right CN III nucleus from the left CN VI nucleus. On <em>right</em> gaze, the right eye fails to adduct (cannot move right) while the left eye abducts normally — often with abducting nystagmus. Left gaze and vertical movements are preserved. Most commonly caused by MS or brainstem infarct.`,
     gazeR: (nx, ny) => {
       const gy = Math.tanh(ny*2.2)*MAX_Y;
-      // Right eye: adduction = iris moves RIGHT (positive x). This is blocked on right gaze (nx > 0).
+      // Right eye: adduction = iris moves RIGHT (positive x). Blocked on right gaze (nx > 0).
       const gx = nx > 0
-        ? Math.tanh(nx*2.2)*MAX_X * 0.08  // adduction impaired
-        : Math.tanh(nx*2.2)*MAX_X;          // abduction (left gaze) normal
+        ? Math.tanh(nx*2.2)*MAX_X * 0.08
+        : Math.tanh(nx*2.2)*MAX_X;
       return { x: gx, y: gy };
     },
     gazeL: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
-    // Left eye abducts (moves right/positive x) on right gaze — nystagmus there
     inoNystagmusLeft: true,
+  },
+  {
+    id: 'ino_left',
+    name: 'Left INO',
+    description: `<strong>Left-sided INO (internuclear ophthalmoplegia)</strong> — a lesion of the <em>left MLF</em> disconnects the left CN III nucleus from the right CN VI nucleus. On <em>left</em> gaze, the left eye fails to adduct (cannot move left) while the right eye abducts normally — often with abducting nystagmus in the right eye. Right gaze and vertical movements are preserved. Most commonly caused by MS or brainstem infarct.`,
+    gazeR: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
+    gazeL: (nx, ny) => {
+      const gy = Math.tanh(ny*2.2)*MAX_Y;
+      // Left eye: adduction = iris moves LEFT (negative x). Blocked on left gaze (nx < 0).
+      const gx = nx < 0
+        ? Math.tanh(nx*2.2)*MAX_X * 0.08
+        : Math.tanh(nx*2.2)*MAX_X;
+      return { x: gx, y: gy };
+    },
+    // Right eye abducts (moves left) on left gaze — nystagmus there
+    inoNystagmusRight: true,
+  },
+  {
+    id: 'ino_bilateral',
+    name: 'Bilateral INO',
+    description: `<strong>Bilateral INO</strong> — lesions of <em>both</em> medial longitudinal fasciculi. Neither eye can adduct on horizontal gaze. On <em>right</em> gaze, the left eye abducts but the right eye fails to adduct (with abducting nystagmus in the left eye); on <em>left</em> gaze, the right eye abducts but the left eye fails to adduct (nystagmus in the right eye). Vertical gaze and convergence are typically preserved. Bilateral INO in a young patient is highly suggestive of <em>multiple sclerosis</em>; in an older patient, brainstem infarction is more likely.`,
+    gazeR: (nx, ny) => {
+      const gy = Math.tanh(ny*2.2)*MAX_Y;
+      // Right eye fails to adduct on RIGHT gaze (nx > 0, iris would move to positive x).
+      // On LEFT gaze the right eye abducts normally.
+      const gx = nx > 0
+        ? Math.tanh(nx*2.2)*MAX_X * 0.08
+        : Math.tanh(nx*2.2)*MAX_X;
+      return { x: gx, y: gy };
+    },
+    gazeL: (nx, ny) => {
+      const gy = Math.tanh(ny*2.2)*MAX_Y;
+      // Left eye fails to adduct on LEFT gaze (nx < 0, iris would move to negative x).
+      // On RIGHT gaze the left eye abducts normally.
+      const gx = nx < 0
+        ? Math.tanh(nx*2.2)*MAX_X * 0.08
+        : Math.tanh(nx*2.2)*MAX_X;
+      return { x: gx, y: gy };
+    },
+    inoBilateral: true,
   },
 ];
 
@@ -794,13 +869,18 @@ const ANSWER_OPTIONS = [
   'Normal Eye Movements',
   'Left CN 6 Palsy',
   'Right CN 6 Palsy',
-  'Left CN 3 Palsy',
-  'Right CN 3 Palsy',
+  'Left CN 3 Palsy (Pupil-Involving)',
+  'Right CN 3 Palsy (Pupil-Involving)',
+  'Left CN 3 Palsy (Pupil-Sparing)',
+  'Right CN 3 Palsy (Pupil-Sparing)',
   'Left CN 4 Palsy',
   'Right CN 4 Palsy',
-  'Internuclear Ophthalmoplegia',
+  'Right INO',
+  'Left INO',
+  'Bilateral INO',
 ];
-const ANSWER_KEYS = ['A','B','C','D','E','F','G','H'];
+const ANSWER_KEYS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+const TOTAL_ROUNDS = ANSWER_OPTIONS.length;
 
 // ════════════════════════════════════════════════════════
 //  GAME STATE
@@ -1085,11 +1165,29 @@ function animate(ts) {
   gameState.gazeL.x += (tl.x - gameState.gazeL.x)*spd;
   gameState.gazeL.y += (tl.y - gameState.gazeL.y)*spd;
 
-  // Nystagmus for INO: left eye abducts on RIGHT gaze (nx > 0.2) and shows nystagmus
+  // Nystagmus for INO abducting eye
+  // Right INO:     left eye abducts on RIGHT gaze (nx > 0.2) → nystagmus in left eye
+  // Left INO:      right eye abducts on LEFT gaze (nx < -0.2) → nystagmus in right eye
+  // Bilateral INO: nystagmus in whichever eye is currently abducting
   let nysR = 0, nysL = 0;
-  if (scenario.inoNystagmusLeft && nx > 0.2) {
+  if (scenario.inoBilateral) {
+    // Right gaze (nx > 0): right eye fails to adduct, left eye abducts with nystagmus.
+    // Left gaze  (nx < 0): left eye fails to adduct, right eye abducts with nystagmus.
+    if (nx > 0.2) {
+      gameState.nystagmusPhase = (gameState.nystagmusPhase || 0) + 0.18;
+      nysL = Math.sin(gameState.nystagmusPhase * 6) * 5;
+    } else if (nx < -0.2) {
+      gameState.nystagmusPhase = (gameState.nystagmusPhase || 0) + 0.18;
+      nysR = Math.sin(gameState.nystagmusPhase * 6) * 5;
+    } else {
+      gameState.nystagmusPhase = 0;
+    }
+  } else if (scenario.inoNystagmusLeft && nx > 0.2) {
     gameState.nystagmusPhase = (gameState.nystagmusPhase || 0) + 0.18;
     nysL = Math.sin(gameState.nystagmusPhase * 6) * 5;
+  } else if (scenario.inoNystagmusRight && nx < -0.2) {
+    gameState.nystagmusPhase = (gameState.nystagmusPhase || 0) + 0.18;
+    nysR = Math.sin(gameState.nystagmusPhase * 6) * 5;
   } else {
     gameState.nystagmusPhase = 0;
   }
@@ -1114,7 +1212,7 @@ function animate(ts) {
 function buildDots() {
   const container = document.getElementById('round-dots');
   container.innerHTML = '';
-  for (let i=0;i<8;i++) {
+  for (let i=0;i<TOTAL_ROUNDS;i++) {
     const d = document.createElement('div');
     d.className = 'round-dot' + (i===0 ? ' current' : '');
     d.id = `dot-${i}`;
@@ -1123,7 +1221,7 @@ function buildDots() {
 }
 
 function updateDots(round, result) {
-  for (let i=0;i<8;i++) {
+  for (let i=0;i<TOTAL_ROUNDS;i++) {
     const d = document.getElementById(`dot-${i}`);
     if (!d) continue;
     d.className = 'round-dot';
@@ -1180,7 +1278,7 @@ function handleAnswer(chosen) {
 
   // Last round → change button
   const nextBtn = document.getElementById('next-btn');
-  if (gameState.round === 7) {
+  if (gameState.round === TOTAL_ROUNDS - 1) {
     nextBtn.textContent = 'View Results →';
   } else {
     nextBtn.textContent = 'Next Case →';
@@ -1188,7 +1286,7 @@ function handleAnswer(chosen) {
 }
 
 function nextRound() {
-  if (gameState.round >= 7) {
+  if (gameState.round >= TOTAL_ROUNDS - 1) {
     showResults();
     return;
   }
@@ -1197,8 +1295,8 @@ function nextRound() {
   gameState.gazeR = { x: 0, y: 0 };
   gameState.gazeL = { x: 0, y: 0 };
 
-  document.getElementById('round-text').textContent = `Round ${gameState.round+1} of 8`;
-  document.getElementById('progress-fill').style.width = `${(gameState.round+1)/8*100}%`;
+  document.getElementById('round-text').textContent = `Round ${gameState.round+1} of ${TOTAL_ROUNDS}`;
+  document.getElementById('progress-fill').style.width = `${(gameState.round+1)/TOTAL_ROUNDS*100}%`;
   document.getElementById('feedback-panel').classList.remove('visible');
   buildAnswers();
   updateDots(gameState.round);
@@ -1209,12 +1307,14 @@ function showResults() {
 
   const scoreEl = document.getElementById('results-score');
   scoreEl.textContent = gameState.score;
+  const denomEl = document.getElementById('results-score-denom');
+  if (denomEl) denomEl.textContent = `out of ${TOTAL_ROUNDS}`;
 
   const msgs = [
-    [8, "Perfect score — outstanding clinical acumen."],
-    [6, "Excellent — you have a strong grasp of ocular motility."],
-    [4, "Good effort — review the cases you missed."],
-    [0, "Keep practicing — ocular motility takes time to master."],
+    [TOTAL_ROUNDS,                "Perfect score — outstanding clinical acumen."],
+    [Math.ceil(TOTAL_ROUNDS*0.8), "Excellent — you have a strong grasp of ocular motility."],
+    [Math.ceil(TOTAL_ROUNDS*0.5), "Good effort — review the cases you missed."],
+    [0,                           "Keep practicing — ocular motility takes time to master."],
   ];
   const msg = msgs.find(([min]) => gameState.score >= min);
   document.getElementById('results-msg').textContent = msg[1];
@@ -1236,7 +1336,7 @@ function showResults() {
 
 function startGame() {
   gameState = {
-    order: shuffleArray([...Array(8).keys()]),
+    order: shuffleArray([...Array(TOTAL_ROUNDS).keys()]),
     round: 0,
     score: 0,
     answered: false,
@@ -1248,8 +1348,8 @@ function startGame() {
   };
   buildDots();
   buildAnswers();
-  document.getElementById('round-text').textContent = 'Round 1 of 8';
-  document.getElementById('progress-fill').style.width = '12.5%';
+  document.getElementById('round-text').textContent = `Round 1 of ${TOTAL_ROUNDS}`;
+  document.getElementById('progress-fill').style.width = `${100/TOTAL_ROUNDS}%`;
   document.getElementById('score-display').textContent = 'Score: 0';
   document.getElementById('feedback-panel').classList.remove('visible');
   showScreen('screen-game');
