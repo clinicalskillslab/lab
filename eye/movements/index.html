@@ -811,7 +811,7 @@ const SCENARIOS = [
   {
     id: 'ino_right',
     name: 'Right INO',
-    description: `<strong>Right-sided INO (internuclear ophthalmoplegia)</strong> — a lesion of the <em>right MLF</em> (medial longitudinal fasciculus) disconnects the right CN III nucleus from the left CN VI nucleus. On <em>right</em> gaze, the right eye fails to adduct (cannot move right) while the left eye abducts normally — often with abducting nystagmus. Left gaze and vertical movements are preserved. Most commonly caused by MS or brainstem infarct.`,
+    description: `<strong>Right-sided INO (internuclear ophthalmoplegia)</strong> — a lesion of the <em>right MLF</em> (medial longitudinal fasciculus) disconnects the right CN III nucleus from the left CN VI nucleus. On <em>right</em> gaze, the right eye fails to adduct (cannot move right) while the left eye abducts normally — often with abducting nystagmus. Left gaze and vertical movements are preserved. Most commonly caused by MS or brainstem infarct.<br><br><em style="opacity:0.8">Note: the adduction deficit shown here is exaggerated for training. In real life the affected eye usually still crosses the midline, just more slowly and incompletely — lagging behind the abducting eye.</em>`,
     gazeR: (nx, ny) => {
       const gy = Math.tanh(ny*2.2)*MAX_Y;
       // Right eye: adduction = iris moves RIGHT (positive x). Blocked on right gaze (nx > 0).
@@ -826,7 +826,7 @@ const SCENARIOS = [
   {
     id: 'ino_left',
     name: 'Left INO',
-    description: `<strong>Left-sided INO (internuclear ophthalmoplegia)</strong> — a lesion of the <em>left MLF</em> disconnects the left CN III nucleus from the right CN VI nucleus. On <em>left</em> gaze, the left eye fails to adduct (cannot move left) while the right eye abducts normally — often with abducting nystagmus in the right eye. Right gaze and vertical movements are preserved. Most commonly caused by MS or brainstem infarct.`,
+    description: `<strong>Left-sided INO (internuclear ophthalmoplegia)</strong> — a lesion of the <em>left MLF</em> disconnects the left CN III nucleus from the right CN VI nucleus. On <em>left</em> gaze, the left eye fails to adduct (cannot move left) while the right eye abducts normally — often with abducting nystagmus in the right eye. Right gaze and vertical movements are preserved. Most commonly caused by MS or brainstem infarct.<br><br><em style="opacity:0.8">Note: the adduction deficit shown here is exaggerated for training. In real life the affected eye usually still crosses the midline, just more slowly and incompletely — lagging behind the abducting eye.</em>`,
     gazeR: (nx, ny) => ({ x: Math.tanh(nx*2.2)*MAX_X, y: Math.tanh(ny*2.2)*MAX_Y }),
     gazeL: (nx, ny) => {
       const gy = Math.tanh(ny*2.2)*MAX_Y;
@@ -842,7 +842,7 @@ const SCENARIOS = [
   {
     id: 'ino_bilateral',
     name: 'Bilateral INO',
-    description: `<strong>Bilateral INO</strong> — lesions of <em>both</em> medial longitudinal fasciculi. Neither eye can adduct on horizontal gaze. On <em>right</em> gaze, the left eye abducts but the right eye fails to adduct (with abducting nystagmus in the left eye); on <em>left</em> gaze, the right eye abducts but the left eye fails to adduct (nystagmus in the right eye). Vertical gaze and convergence are typically preserved. Bilateral INO in a young patient is highly suggestive of <em>multiple sclerosis</em>; in an older patient, brainstem infarction is more likely.`,
+    description: `<strong>Bilateral INO</strong> — lesions of <em>both</em> medial longitudinal fasciculi. Neither eye can adduct on horizontal gaze. On <em>right</em> gaze, the left eye abducts but the right eye fails to adduct (with abducting nystagmus in the left eye); on <em>left</em> gaze, the right eye abducts but the left eye fails to adduct (nystagmus in the right eye). Vertical gaze and convergence are typically preserved. Bilateral INO in a young patient is highly suggestive of <em>multiple sclerosis</em>; in an older patient, brainstem infarction is more likely.<br><br><em style="opacity:0.8">Note: the adduction deficit shown here is exaggerated for training. In real life the affected eyes usually still cross the midline, just more slowly and incompletely — lagging behind the abducting eye on each side.</em>`,
     gazeR: (nx, ny) => {
       const gy = Math.tanh(ny*2.2)*MAX_Y;
       // Right eye fails to adduct on RIGHT gaze (nx > 0, iris would move to positive x).
