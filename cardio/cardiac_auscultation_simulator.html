@@ -1,0 +1,3528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cardiac Confidence Lab — Auscultation Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal:        #1FB5B0;
+    --teal-dark:   #168784;
+    --teal-light:  #B6E5E3;
+    --teal-bg:     #E8F6F5;
+    --pink:        #E91E63;
+    --pink-light:  #F9C3D5;
+    --pink-bg:     #FCE4EC;
+    --cream:       #FDF6E8;
+    --cream-deep:  #F8E7C3;
+    --skin:        #F8DDC4;
+    --skin-shade:  #E9C5A4;
+    --skin-line:   #B9886A;
+    --black:       #1A1A1A;
+    --text:        #2A2A2A;
+    --muted:       #7A8896;
+    --good:        #22A06B;
+    --bad:         #E11D48;
+    --bg:          #FFFFFF;
+    --soft-shadow: 0 2px 10px rgba(31,181,176,0.10);
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
+  body {
+    margin: 0;
+    color: var(--text);
+    font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh;
+    font-weight: 500;
+  }
+
+  /* ---- Instruction box ---- */
+  .instruct-box {
+    background: var(--cream);
+    border: 1.5px solid var(--cream-deep);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .instruct-title {
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--teal-dark);
+    margin-bottom: 6px;
+  }
+  .instruct-box p { margin: 0 0 6px; }
+  .instruct-box ul { margin: 0; padding-left: 16px; }
+  .instruct-box ul li { margin-bottom: 4px; }
+
+  /* ---- Site header ---- */
+  .site-header {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 14px 18px 10px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--teal-light);
+    margin-bottom: 0;
+  }
+  .site-header h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--black);
+    letter-spacing: -0.2px;
+    white-space: nowrap;
+  }
+  .site-header h1 span.brand-script {
+    font-family: "Caveat", cursive;
+    color: var(--teal-dark);
+    font-size: 28px;
+    font-weight: 700;
+    margin-right: 2px;
+  }
+  .site-header .by-line {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 270px 1fr 340px;
+    gap: 16px;
+    padding: 14px 18px 18px;
+    max-width: 1500px;
+    margin: 0 auto;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* Panels look like the rounded teal-outlined cards in the handout */
+  .panel {
+    background: #fff;
+    border: 2.5px solid var(--teal);
+    border-radius: 16px;
+    padding: 16px 16px 18px;
+    box-shadow: var(--soft-shadow);
+    position: relative;
+  }
+
+  /* Black pill section headers (matches handout) */
+  .pill {
+    display: inline-block;
+    background: var(--black);
+    color: #fff;
+    padding: 6px 18px;
+    border-radius: 18px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin: 0 0 14px;
+  }
+  .pill.pink { background: var(--pink); }
+  .pill.teal { background: var(--teal); }
+
+  .script {
+    font-family: "Caveat", cursive;
+    color: var(--teal-dark);
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  h2.section-label {
+    text-transform: none;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 14px 0 6px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+  }
+
+  /* ---- Buttons ---- */
+  .btn {
+    display: block; width: 100%;
+    background: #fff;
+    color: var(--text);
+    border: 2px solid var(--teal-light);
+    border-radius: 10px;
+    padding: 9px 12px;
+    margin-bottom: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .btn:hover { border-color: var(--teal); background: var(--teal-bg); }
+  .btn.active {
+    background: var(--pink);
+    color: #fff;
+    border-color: var(--pink);
+  }
+  .btn.primary {
+    background: var(--pink);
+    color: #fff;
+    border-color: var(--pink);
+    text-align: center;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+  }
+  .btn.primary:hover { background: #c91a55; border-color: #c91a55; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pill-row { display: flex; gap: 6px; }
+  .pill-row .btn { margin-bottom: 0; }
+
+  /* ---- Centre stage ---- */
+  .stage {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 12px;
+  }
+  .case-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+  .case-title { margin: 0; font-size: 22px; font-weight: 800; color: var(--black); }
+  .case-title .script-em { font-family: "Caveat"; color: var(--teal-dark); font-size: 30px;
+    margin-left: 6px; font-weight: 700; }
+  .case-count {
+    background: var(--pink-bg);
+    color: var(--pink);
+    border: 1.5px solid var(--pink-light);
+    padding: 3px 12px; border-radius: 14px;
+    font-size: 12px; font-weight: 700;
+  }
+
+  /* Patient row — findings column + chest side-by-side */
+  .patient-area {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    align-items: stretch;
+  }
+  .findings-column {
+    flex: 0 0 200px;
+    background: #fff;
+    border: 2px solid var(--teal);
+    border-radius: 14px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    max-height: 540px;
+  }
+  .findings-head {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    gap: 6px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .findings-head .pill { margin: 0; }
+  .findings-hint {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    flex: 1; text-align: right;
+  }
+  .findings-column .exam-findings {
+    display: flex !important;
+    flex-direction: column;
+    gap: 6px;
+    grid-template-columns: none !important;
+    overflow-y: auto;
+    padding-right: 4px;
+    flex: 1;
+  }
+  .findings-column .exam-findings::-webkit-scrollbar { width: 6px; }
+  .findings-column .exam-findings::-webkit-scrollbar-thumb {
+    background: var(--teal-light); border-radius: 3px;
+  }
+  .findings-column .exam-card { padding: 6px 10px; }
+  .findings-column .exam-card h4 { font-size: 10px; margin-bottom: 2px; }
+  .findings-column .exam-card p { font-size: 11.5px; line-height: 1.3; }
+
+  /* Chest area: cream background with cartoon torso */
+  .chest-wrap {
+    background: var(--cream);
+    border-radius: 16px;
+    padding: 6px;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    border: 2px solid var(--cream-deep);
+  }
+  @media (max-width: 1100px) {
+    .patient-area { flex-direction: column; }
+    .findings-column { flex: 0 0 auto; max-height: 220px; }
+  }
+  svg.chest { max-width: 100%; height: auto; display: block; }
+
+  /* Auscultation spots — white circles with gray outlines like the handout */
+  .spot {
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .spot circle {
+    fill: #fff;
+    stroke: #6E7A86;
+    stroke-width: 2;
+    transition: all 0.12s;
+  }
+  .spot:hover circle { stroke: var(--pink); stroke-width: 3; }
+  .spot.active circle {
+    fill: var(--pink);
+    stroke: #fff;
+    stroke-width: 3;
+    r: 13;
+    filter: drop-shadow(0 0 6px rgba(233,30,99,0.55));
+  }
+  .spot text {
+    fill: var(--black);
+    font-size: 10px;
+    font-weight: 700;
+    pointer-events: none;
+    font-family: "Nunito", sans-serif;
+  }
+  .spot.active text { fill: var(--pink); }
+
+  /* Examination hotspots — teal style to distinguish from auscultation */
+  .exam-hotspot { cursor: pointer; }
+  .exam-hotspot circle {
+    fill: #fff;
+    stroke: var(--teal);
+    stroke-width: 2.5;
+    transition: all 0.12s;
+  }
+  .exam-hotspot:hover circle {
+    fill: var(--teal-bg);
+    stroke: var(--teal-dark);
+    r: 14;
+  }
+  .exam-hotspot.examined circle {
+    fill: var(--teal);
+    stroke: var(--teal);
+  }
+  .exam-hotspot text {
+    fill: var(--teal-dark);
+    font-size: 10px;
+    font-weight: 800;
+    pointer-events: none;
+    font-family: "Nunito", sans-serif;
+  }
+  .exam-hotspot.examined text { fill: #fff; }
+  .exam-hotspot .exam-tag {
+    fill: var(--teal-dark);
+    font-weight: 700;
+    font-size: 9px;
+  }
+  .exam-hotspot.examined .exam-tag { fill: var(--teal-dark); }
+
+  /* Hand-icon hotspots (palpation: apex, thrill, RV heave) */
+  .exam-hotspot.icon-hand rect {
+    fill: #fff;
+    stroke: var(--teal);
+    stroke-width: 1.5;
+    transition: all 0.12s;
+  }
+  .exam-hotspot.icon-hand:hover rect { fill: var(--teal-bg); }
+  .exam-hotspot.icon-hand.examined rect { fill: var(--teal); }
+
+  /* Lung-icon hotspot */
+  .exam-hotspot.icon-lung ellipse {
+    fill: #fff;
+    stroke: var(--teal);
+    stroke-width: 2;
+    transition: all 0.12s;
+  }
+  .exam-hotspot.icon-lung:hover ellipse { fill: var(--teal-bg); }
+  .exam-hotspot.icon-lung.examined ellipse { fill: var(--teal); }
+  .exam-hotspot.icon-lung line { stroke: var(--teal); pointer-events: none; }
+
+  /* ---- Carotid pulse + cycle visualisation (handout-style) ---- */
+  .pulse-area {
+    width: 100%;
+    background: #fff;
+    border: 2px solid var(--teal);
+    border-radius: 14px;
+    padding: 14px 16px 16px;
+  }
+  .pulse-area-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .carotid-light {
+    display: inline-flex; align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 7px 16px;
+    border-radius: 22px;
+    background: #2A2A2A;
+    color: #5A6470;
+    border: 2.5px solid #1A1A1A;
+    transition: background 0.08s ease-out, color 0.08s, box-shadow 0.08s, transform 0.08s;
+    text-transform: uppercase;
+  }
+  .carotid-light.on {
+    background: var(--pink);
+    color: #fff;
+    border-color: var(--pink);
+    box-shadow: 0 0 28px rgba(233,30,99,0.65);
+    transform: scale(1.06);
+  }
+  .cycle-info {
+    color: var(--teal-dark);
+    font-family: "Caveat";
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  /* The cycle "track" matches the handout: S1 (black bar), murmur (gray lines),
+     S2 (pink bar), diastole (empty/extras), S1 (black bar) on cream baseline */
+  .cycle-stage {
+    position: relative;
+    height: 130px;
+    background:
+      linear-gradient(to bottom, transparent 100px, var(--cream-deep) 100px, var(--cream-deep) 108px, transparent 108px);
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 0 6px;
+  }
+  .cycle-stage .baseline {
+    position: absolute; left: 0; right: 0; bottom: 22px;
+    height: 4px; background: var(--cream-deep); border-radius: 2px;
+  }
+  .cycle-stage .bar {
+    position: absolute; bottom: 24px;
+    transform: translateX(-50%);
+    border-radius: 5px 5px 2px 2px;
+  }
+  .cycle-stage .bar.s1 { background: var(--black); width: 14px; }
+  .cycle-stage .bar.s2 { background: var(--pink); width: 14px; }
+  .cycle-stage .bar.click { background: #444; width: 4px; }
+  .cycle-stage .bar.snap { background: #888; width: 5px; }
+  .cycle-stage .bar.s4 { background: #555; width: 8px; opacity: 0.7; }
+  .cycle-stage .bar-label {
+    position: absolute;
+    transform: translateX(-50%);
+    bottom: 100%;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--black);
+    white-space: nowrap;
+  }
+  .cycle-stage .bar.s2 + .bar-label { color: var(--pink); }
+  .cycle-stage .murmur-line {
+    position: absolute; bottom: 24px;
+    transform: translateX(-50%);
+    width: 2px;
+    background: #6B7280;
+    opacity: 0.85;
+    border-radius: 2px;
+  }
+  .cycle-stage .cursor {
+    position: absolute; top: 4px; bottom: 22px;
+    width: 3px;
+    background: var(--teal);
+    opacity: 0.55;
+    border-radius: 2px;
+    box-shadow: 0 0 10px var(--teal);
+    pointer-events: none;
+  }
+  /* Shaded zone showing when the murmur occurs */
+  .cycle-stage .murmur-zone {
+    position: absolute;
+    bottom: 28px;
+    height: 56px;
+    border-radius: 4px;
+    pointer-events: none;
+    background: var(--teal);
+    opacity: 0.13;
+  }
+  .cycle-stage .murmur-zone.diastolic {
+    background: var(--pink);
+    opacity: 0.12;
+  }
+
+  .cycle-stage .systole-zone, .cycle-stage .diastole-zone {
+    position: absolute; bottom: 16px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+    transform: translateX(-50%);
+  }
+
+  /* Currently-listening info */
+  .listening-info {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--teal-bg);
+    padding: 10px 14px;
+    border-radius: 10px;
+    width: 100%;
+    font-size: 13px;
+    border: 1.5px solid var(--teal-light);
+  }
+  .badge {
+    background: var(--pink);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-left: 6px;
+    font-weight: 700;
+  }
+  .loudness-pill {
+    padding: 3px 12px;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--teal-dark);
+    font-size: 11px;
+    font-weight: 700;
+    border: 1.5px solid var(--teal-light);
+  }
+  .vol-row {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; margin-top: 6px;
+  }
+  .vol-row label { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .vol-row input[type=range] {
+    flex: 1; accent-color: var(--pink);
+  }
+
+  /* ---- Right column / diagnosis ---- */
+  select, textarea, input[type="text"] {
+    width: 100%;
+    padding: 9px 11px;
+    background: #fff;
+    color: var(--text);
+    border: 2px solid var(--teal-light);
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  select:focus, textarea:focus, input:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px var(--teal-bg);
+  }
+  textarea { resize: vertical; min-height: 60px; }
+
+  label.check {
+    display: flex; align-items: flex-start; gap: 6px;
+    font-size: 12px;
+    color: var(--text);
+    padding: 3px 0;
+    cursor: pointer;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  label.check input { margin-top: 2px; flex-shrink: 0; accent-color: var(--pink); }
+  .checks { max-height: 220px; overflow-y: auto; padding-right: 4px; }
+  .checks::-webkit-scrollbar { width: 6px; }
+  .checks::-webkit-scrollbar-thumb { background: var(--teal-light); border-radius: 3px; }
+
+  /* ---- Feedback overlay ---- */
+  .feedback-overlay {
+    position: fixed; inset: 0;
+    background: rgba(31,181,176,0.18);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .feedback-overlay.show { display: flex; }
+  .feedback-box {
+    background: #fff;
+    border-radius: 18px;
+    padding: 26px;
+    max-width: 660px;
+    width: 100%;
+    border: 3px solid var(--teal);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.20);
+  }
+  .verdict {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    padding: 6px 16px;
+    border-radius: 16px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .verdict.correct { background: #DFFAEC; color: var(--good); }
+  .verdict.incorrect { background: var(--pink-bg); color: var(--pink); }
+  .answer-row { font-size: 16px; margin-bottom: 16px; color: var(--text); }
+  .answer-row b { color: var(--pink); font-weight: 800; }
+  .teach-section { margin-bottom: 16px; }
+  .teach-section h4 {
+    display: inline-block;
+    background: var(--black);
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 14px;
+    font-size: 12px;
+    text-transform: none;
+    letter-spacing: 0.3px;
+    margin: 0 0 8px;
+    font-weight: 700;
+  }
+  .teach-section ul { margin: 0; padding-left: 22px; font-size: 14px; line-height: 1.6; }
+  .teach-section li { margin-bottom: 3px; }
+  .teach-section p { margin: 0 0 8px; font-size: 14px; line-height: 1.55; }
+
+  /* Help / details */
+  .help-bar {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    padding: 8px;
+    border-top: 1.5px dashed var(--teal-light);
+    margin-top: 8px;
+    width: 100%;
+  }
+  .help-bar b { color: var(--pink); }
+  details {
+    margin-top: 12px; font-size: 12px; color: var(--muted);
+    background: var(--teal-bg); padding: 10px; border-radius: 10px;
+    border: 1px solid var(--teal-light);
+  }
+  details summary { cursor: pointer; padding: 2px 0; font-weight: 700; color: var(--teal-dark); }
+  details pre { background: #fff; padding: 8px; border-radius: 6px;
+      overflow-x: auto; font-size: 11px; color: var(--text); border: 1px solid var(--teal-light); }
+
+  /* Mascot pinned in the corner */
+  .mascot {
+    position: fixed;
+    right: 18px; bottom: 18px;
+    width: 90px; height: 90px;
+    pointer-events: none;
+    opacity: 0.95;
+    z-index: 5;
+  }
+
+  /* ============== Discussion flow ============== */
+  .right-sub {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .stage-card {
+    background: #fff;
+    border: 2px solid var(--teal-light);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .stage-card.active {
+    border-color: var(--pink);
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(233,30,99,0.16);
+  }
+  .stage-card.done {
+    border-color: var(--teal);
+    background: var(--teal-bg);
+    padding: 8px 10px;
+  }
+  .stage-card .q {
+    font-weight: 800;
+    font-size: 12.5px;
+    color: var(--black);
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+    line-height: 1.3;
+  }
+  .stage-card.done .q { color: var(--teal-dark); font-size: 11.5px; }
+  .stage-card .q .num {
+    display: inline-flex;
+    width: 22px; height: 22px;
+    background: var(--pink);
+    color: #fff;
+    border-radius: 50%;
+    align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .stage-card.done .q .num { background: var(--teal); }
+  .stage-card .a {
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.45;
+  }
+  .stage-card .a .chip {
+    display: inline-block;
+    background: #fff;
+    color: var(--teal-dark);
+    padding: 3px 9px;
+    border-radius: 12px;
+    border: 1.5px solid var(--teal);
+    font-size: 11.5px;
+    font-weight: 700;
+    margin: 2px 4px 2px 0;
+  }
+  .stage-card.done .a .chip { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .stage-card .a .chip.wrong {
+    background: #fff; color: var(--bad); border-color: var(--bad);
+  }
+  .stage-card.done .a .chip.wrong {
+    background: var(--bad); color: #fff; border-color: var(--bad);
+  }
+  .stage-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .stage-actions .btn { margin-bottom: 0; padding: 7px 10px; font-size: 12px; }
+
+  .verdict-inline {
+    display: inline-block;
+    font-size: 11px; font-weight: 800;
+    padding: 3px 10px; border-radius: 11px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-left: 6px;
+  }
+  .verdict-inline.correct  { background: #DFFAEC; color: var(--good); }
+  .verdict-inline.incorrect{ background: var(--pink-bg); color: var(--pink); }
+
+  /* Locked patient look when in discussion mode */
+  body.locked .panel.left-locked,
+  body.locked .panel.center-locked {
+    position: relative;
+  }
+  body.locked .panel.left-locked::before,
+  body.locked .panel.center-locked::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.65);
+    z-index: 4; border-radius: 14px;
+    pointer-events: all;
+  }
+  body.locked .lock-banner {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--teal);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 22px;
+    font-weight: 800;
+    font-size: 13px;
+    z-index: 5;
+    letter-spacing: 0.3px;
+    box-shadow: 0 6px 18px rgba(31,181,176,0.35);
+    white-space: nowrap;
+  }
+  .lock-banner { display: none; }
+  body.locked .lock-banner { display: block; }
+
+  /* Severity binary picker */
+  .sev-buttons {
+    display: flex; gap: 8px;
+    margin-top: 4px;
+  }
+  .sev-btn {
+    flex: 1;
+    padding: 12px 8px;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: center;
+    border: 2px solid var(--teal);
+    background: #fff;
+    color: var(--teal-dark);
+    transition: all 0.12s;
+  }
+  .sev-btn:hover { background: var(--teal); color: #fff; }
+
+  /* Severity MCQ (legacy — kept for backwards compat, not used) */
+  .mcq-list { margin-top: 6px; }
+  .mcq-list label {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 7px 10px;
+    border: 1.5px solid var(--teal-light);
+    border-radius: 8px;
+    margin-bottom: 5px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .mcq-list label:hover { border-color: var(--teal); background: var(--teal-bg); }
+  .mcq-list label input { margin-top: 2px; accent-color: var(--pink); }
+  .mcq-list label.picked {
+    background: var(--pink-bg);
+    border-color: var(--pink);
+  }
+
+  /* Mind map summary */
+  .mindmap {
+    background: var(--cream);
+    border: 2px solid var(--cream-deep);
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 6px;
+  }
+  .mindmap .branch {
+    border-left: 3px solid var(--teal);
+    padding: 4px 0 4px 12px;
+    margin: 8px 0 8px 6px;
+  }
+  .mindmap .branch.pink { border-left-color: var(--pink); }
+  .mindmap .branch h5 {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: var(--teal-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 800;
+  }
+  .mindmap .branch.pink h5 { color: var(--pink); }
+  .mindmap .branch ul { margin: 4px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.55; }
+
+  .severity-score {
+    background: #fff;
+    border: 2px solid var(--teal);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--teal-dark);
+    display: inline-block;
+  }
+
+  /* ============== Examination tray ============== */
+  .exam-tray {
+    width: 100%;
+    background: var(--cream);
+    border: 2px solid var(--cream-deep);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  .exam-tray-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .exam-tray-head .pill { margin: 0; }
+  .exam-tray-head .hint {
+    font-size: 11px; color: var(--muted); font-weight: 600;
+    flex: 1;
+  }
+  .exam-buttons {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 10px;
+  }
+  .exam-btn {
+    background: #fff;
+    border: 2px solid var(--teal-light);
+    color: var(--teal-dark);
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.12s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .exam-btn::before {
+    content: "+";
+    font-weight: 900; color: var(--teal);
+    font-size: 13px;
+  }
+  .exam-btn:hover { border-color: var(--teal); background: var(--teal-bg); }
+  .exam-btn.examined {
+    background: var(--teal); color: #fff; border-color: var(--teal);
+  }
+  .exam-btn.examined::before { content: "✓"; color: #fff; }
+  .exam-findings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  @media (max-width: 700px) {
+    .exam-findings { grid-template-columns: 1fr; }
+  }
+  .exam-card {
+    background: #fff;
+    border: 2px solid var(--teal-light);
+    border-left: 5px solid var(--teal);
+    border-radius: 8px;
+    padding: 8px 12px;
+    position: relative;
+    animation: flipIn 0.3s ease-out;
+  }
+  .exam-card h4 {
+    margin: 0 0 3px;
+    font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--teal-dark);
+    font-weight: 800;
+  }
+  .exam-card p {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.35;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .exam-empty {
+    color: var(--muted); font-size: 12px; font-style: italic;
+    padding: 8px 4px;
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+  @keyframes flipIn {
+    from { opacity: 0; transform: rotateX(80deg) translateY(-8px); }
+    to   { opacity: 1; transform: rotateX(0) translateY(0); }
+  }
+
+  @media (max-width: 1100px) {
+    .app { grid-template-columns: 1fr; }
+    .mascot { display: none; }
+  }
+
+  /* ============== EXAMINER DISCUSSION SCREEN ============== */
+  #examinerScreen {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--bg);
+    padding: 24px 20px 48px;
+  }
+  .exam-screen-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .exam-screen-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 2.5px solid var(--teal-light);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .exam-screen-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--black);
+  }
+  .exam-screen-title .script-em {
+    font-family: "Caveat";
+    color: var(--teal-dark);
+    font-size: 26px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+  .exam-block {
+    background: #fff;
+    border: 2.5px solid var(--teal);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .exam-block.done {
+    border-color: var(--teal-light);
+    background: var(--teal-bg);
+  }
+  .exam-block.teach {
+    border-color: var(--teal);
+    background: #fff;
+  }
+  .exam-block-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--black);
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .exam-block-title .sn {
+    display: inline-flex;
+    width: 26px; height: 26px;
+    background: var(--pink);
+    color: #fff;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .exam-block.done .exam-block-title .sn { background: var(--teal); }
+  .exam-block.teach .exam-block-title .sn { background: var(--teal); }
+
+  /* Diagnosis radio grid */
+  .dx-radio-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 600px) { .dx-radio-grid { grid-template-columns: 1fr; } }
+  .dx-radio-grid label {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px;
+    border: 1.5px solid var(--teal-light);
+    border-radius: 9px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.12s;
+    line-height: 1.3;
+  }
+  .dx-radio-grid label:hover { border-color: var(--teal); background: var(--teal-bg); }
+  .dx-radio-grid label.picked { border-color: var(--pink); background: var(--pink-bg); }
+  .dx-radio-grid input[type=radio] { accent-color: var(--pink); flex-shrink: 0; }
+
+  /* Feature checkbox grid */
+  .feat-subhead { font-size: 12px; color: var(--muted); font-weight: 600; margin: 0 0 8px; }
+  .feat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 600px) { .feat-grid { grid-template-columns: 1fr; } }
+  .feat-grid::-webkit-scrollbar { width: 5px; }
+  .feat-grid::-webkit-scrollbar-thumb { background: var(--teal-light); border-radius: 3px; }
+  .feat-grid label {
+    display: flex; align-items: flex-start; gap: 7px;
+    padding: 7px 10px;
+    border: 1.5px solid var(--teal-light);
+    border-radius: 7px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.12s;
+    line-height: 1.35;
+  }
+  .feat-grid label:hover { border-color: var(--teal); background: var(--teal-bg); }
+  .feat-grid label.picked { border-color: var(--pink); background: var(--pink-bg); }
+  .feat-grid label.greyed { opacity: 0.45; cursor: not-allowed; }
+  .feat-grid input[type=checkbox] { accent-color: var(--pink); flex-shrink: 0; margin-top: 1px; }
+
+  /* Result chips */
+  .r-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 6px; }
+  .r-chip {
+    display: inline-block;
+    padding: 4px 11px;
+    border-radius: 11px;
+    font-size: 12px; font-weight: 700;
+    border: 1.5px solid;
+    line-height: 1.25;
+  }
+  .r-chip.ok  { background: #DFFAEC; color: var(--good);  border-color: var(--good); }
+  .r-chip.bad { background: var(--pink-bg); color: var(--pink); border-color: var(--pink); }
+  .r-chip.hint{ background: #fff; color: var(--teal-dark); border-color: var(--teal-light); }
+  .r-note { font-size: 11.5px; color: var(--muted); font-weight: 600; margin: 7px 0 3px; }
+
+  /* Differentials table */
+  .diff-wrap { overflow-x: auto; border-radius: 10px; border: 1.5px solid var(--teal-light); }
+  .diff-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .diff-tbl th {
+    background: var(--black);
+    color: #fff;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-align: left;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .diff-tbl td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--teal-light);
+    vertical-align: middle;
+  }
+  .diff-tbl tr:last-child td { border-bottom: none; }
+  .diff-tbl tr:nth-child(even) td { background: #FAFCFC; }
+  .diff-tbl td:first-child { font-weight: 700; width: 26%; white-space: nowrap; }
+  .diff-tbl select {
+    width: 100%;
+    padding: 7px 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border: 1.5px solid var(--teal-light);
+    border-radius: 8px;
+    font-family: inherit;
+    background: #fff;
+    color: var(--text);
+    margin-bottom: 0;
+    cursor: pointer;
+  }
+  .diff-tbl select:focus { border-color: var(--teal); outline: none; box-shadow: 0 0 0 3px var(--teal-bg); }
+  .diff-result { display: flex; flex-direction: column; gap: 4px; }
+  .diff-result .r-chip { font-size: 11.5px; }
+  .diff-result .r-note { font-size: 10.5px; margin: 2px 0 1px; }
+  .diff-result .r-chips { gap: 3px; margin: 0; }
+  .diff-result .r-chip.hint { font-size: 11px; padding: 2px 8px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1><span class="brand-script">Cardiac</span> Confidence Lab &mdash; Simulator</h1>
+  <span class="by-line">by Kristeen Barker</span>
+</header>
+
+<div class="app">
+
+  <!-- ============== LEFT: MANEUVERS ============== -->
+  <div class="panel left-locked">
+    <div class="lock-banner">✓ Examination complete</div>
+
+    <div class="pill">Audio</div>
+    <button id="playBtn" class="btn primary">▶ Start listening</button>
+    <div class="vol-row">
+      <label>Vol</label>
+      <input type="range" id="vol" min="0" max="100" value="50" />
+    </div>
+
+    <h2 class="section-label" style="margin-top:10px">Manoeuvres</h2>
+    <button class="btn active" data-maneuver="none">Resting / normal breathing</button>
+    <button class="btn" data-maneuver="inspire">Deep inspiration</button>
+    <button class="btn" data-maneuver="expire">Full expiration</button>
+    <button class="btn" data-maneuver="valsalva">Valsalva (strain)</button>
+    <button class="btn" data-maneuver="handgrip">Sustained handgrip</button>
+
+    <h2 class="section-label">Patient position</h2>
+    <button class="btn active" data-position="supine">Supine</button>
+    <button class="btn" data-position="leftLateral">Left lateral decubitus</button>
+    <button class="btn" data-position="sitForward">Sit forward (expiration)</button>
+
+    <h2 class="section-label">Stethoscope</h2>
+    <div class="pill-row">
+      <button class="btn active" style="flex:1" data-steth="diaphragm">Diaphragm</button>
+      <button class="btn" style="flex:1" data-steth="bell">Bell</button>
+    </div>
+  </div>
+
+  <!-- ============== CENTER: PATIENT ============== -->
+  <div class="panel stage center-locked">
+    <div class="lock-banner">Patient examined — now discuss with the examiners</div>
+    <div class="case-header">
+      <div>
+        <h1 class="case-title">Case <span id="caseNum">1</span> — <span class="script-em">examine &amp; diagnose</span></h1>
+      </div>
+      <div class="case-count" id="caseCount">Case 1 of 6</div>
+    </div>
+
+    <div class="patient-area">
+    <div class="findings-column">
+      <div class="findings-head">
+        <span class="pill teal">Findings</span>
+        <span class="findings-hint" id="findingsHint">Tap a teal marker to examine</span>
+      </div>
+      <div class="exam-findings" id="examFindings"></div>
+    </div>
+    <div class="chest-wrap">
+      <svg class="chest" viewBox="0 0 520 620" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- A slightly lit skin tone -->
+          <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="#FCE7CE"/>
+            <stop offset="50%" stop-color="#F8DDC4"/>
+            <stop offset="100%" stop-color="#EFCDAE"/>
+          </linearGradient>
+          <linearGradient id="skinArm" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"  stop-color="#F4D5B6"/>
+            <stop offset="100%" stop-color="#E9C49E"/>
+          </linearGradient>
+          <radialGradient id="cheek" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"  stop-color="#F9C3D5" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="#F9C3D5" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- ========== HEAD ========== -->
+        <circle cx="260" cy="74" r="60"
+                fill="url(#skin)" stroke="#7F8C99" stroke-width="3"/>
+        <!-- Cheeks -->
+        <circle cx="222" cy="86" r="9" fill="url(#cheek)"/>
+        <circle cx="298" cy="86" r="9" fill="url(#cheek)"/>
+        <!-- Eyes (small dots) -->
+        <circle cx="240" cy="70" r="3" fill="#2A2A2A"/>
+        <circle cx="280" cy="70" r="3" fill="#2A2A2A"/>
+        <!-- Friendly little smile -->
+        <path d="M243 96 Q260 108 277 96" stroke="#2A2A2A" stroke-width="2.5"
+              fill="none" stroke-linecap="round"/>
+
+        <!-- ========== NECK ========== -->
+        <path d="M240 128 Q240 150 230 165 L290 165 Q280 150 280 128 Z"
+              fill="url(#skin)" stroke="#7F8C99" stroke-width="3"/>
+
+        <!-- ========== ARMS (suggested) ========== -->
+        <path d="M105 200 Q90 270 105 360 Q115 400 145 390 Q150 330 155 270 Q160 220 140 200 Z"
+              fill="url(#skinArm)" stroke="#7F8C99" stroke-width="3"/>
+        <path d="M415 200 Q430 270 415 360 Q405 400 375 390 Q370 330 365 270 Q360 220 380 200 Z"
+              fill="url(#skinArm)" stroke="#7F8C99" stroke-width="3"/>
+
+        <!-- ========== TORSO ========== -->
+        <path d="M150 200
+                 Q140 180 160 170
+                 L360 170
+                 Q380 180 370 200
+                 Q380 280 375 360
+                 Q380 430 340 440
+                 L180 440
+                 Q140 430 145 360
+                 Q140 280 150 200 Z"
+              fill="url(#skin)" stroke="#7F8C99" stroke-width="3"/>
+
+        <!-- ========== LEGS & FEET (suggested) ========== -->
+        <!-- Patient's right leg (viewer's left) -->
+        <path d="M180 432 Q172 480 170 540 Q170 568 188 575 L240 575 Q255 568 252 540 Q250 480 245 432 Z"
+              fill="url(#skin)" stroke="#7F8C99" stroke-width="3"/>
+        <!-- Patient's left leg (viewer's right) -->
+        <path d="M275 432 Q278 480 280 540 Q280 568 295 575 L348 575 Q360 568 358 540 Q355 480 348 432 Z"
+              fill="url(#skin)" stroke="#7F8C99" stroke-width="3"/>
+        <!-- Feet -->
+        <ellipse cx="215" cy="582" rx="32" ry="9" fill="url(#skin)" stroke="#7F8C99" stroke-width="3"/>
+        <ellipse cx="321" cy="582" rx="32" ry="9" fill="url(#skin)" stroke="#7F8C99" stroke-width="3"/>
+
+        <!-- Subtle midline (sternum) -->
+        <line x1="260" y1="170" x2="260" y2="350" stroke="#D6B493"
+              stroke-width="1.5" stroke-dasharray="3,5" opacity="0.55"/>
+
+        <!-- Subtle nipple hints (so chest reads as a chest) -->
+        <circle cx="205" cy="248" r="3.5" fill="#B98768" opacity="0.5"/>
+        <circle cx="315" cy="248" r="3.5" fill="#B98768" opacity="0.5"/>
+
+        <!-- ========== AUSCULTATION SPOTS ========== -->
+        <!-- Right carotid -->
+        <g class="spot" data-loc="carotid" transform="translate(245,150)">
+          <circle r="11"/>
+        </g>
+        <!-- Left carotid (labeled) -->
+        <g class="spot" data-loc="carotid" transform="translate(275,150)">
+          <circle r="11"/>
+          <text text-anchor="middle" y="-16">Carotid</text>
+        </g>
+
+        <!-- Aortic — 2nd RICS (patient's right) -->
+        <g class="spot" data-loc="aortic" transform="translate(230,210)">
+          <circle r="12"/>
+          <text text-anchor="middle" y="-18">Aortic</text>
+        </g>
+
+        <!-- Pulmonary — 2nd LICS (patient's left) -->
+        <g class="spot" data-loc="pulmonary" transform="translate(290,210)">
+          <circle r="12"/>
+          <text text-anchor="middle" y="-18">Pulmonary</text>
+        </g>
+
+        <!-- LLSE / Tricuspid — combined; same anatomical area (3rd-5th LICS at sternum) -->
+        <g class="spot" data-loc="tricuspid" transform="translate(275,290)">
+          <circle r="12"/>
+          <text text-anchor="middle" y="-18">LLSE / Tricuspid</text>
+        </g>
+
+        <!-- Apex (Mitral) — 5th LICS midclavicular line, patient's left -->
+        <g class="spot" data-loc="apex" transform="translate(335,348)">
+          <circle r="12"/>
+          <text text-anchor="middle" y="-18">Apex (Mitral)</text>
+        </g>
+
+        <!-- Axilla — patient's left, lateral to the apex (radiation point for MR) -->
+        <g class="spot" data-loc="axilla" transform="translate(395,330)">
+          <circle r="12"/>
+          <text text-anchor="middle" y="30">Axilla</text>
+        </g>
+
+        <!-- ========== EXAMINATION HOTSPOTS (teal markers) ========== -->
+        <!-- Radial pulse — right wrist -->
+        <g class="exam-hotspot" data-exam="radial" transform="translate(132,388)">
+          <circle r="13"/>
+          <text text-anchor="middle" dy="4">R</text>
+          <text class="exam-tag" text-anchor="middle" dy="32" font-size="9">Radial</text>
+        </g>
+
+        <!-- Carotid pulse palpation — lateral neck (patient's right) -->
+        <g class="exam-hotspot" data-exam="carotid" transform="translate(212,108)">
+          <circle r="13"/>
+          <text text-anchor="middle" dy="4">C</text>
+          <text class="exam-tag" text-anchor="middle" dy="-19" font-size="9">Palpate carotid</text>
+        </g>
+
+        <!-- BP cuff — right upper arm (same arm as radial) -->
+        <g class="exam-hotspot" data-exam="bp" transform="translate(122,245)">
+          <circle r="13"/>
+          <text text-anchor="middle" dy="4">BP</text>
+          <text class="exam-tag" text-anchor="middle" dy="-19" font-size="9">Blood pressure</text>
+        </g>
+
+        <!-- JVP — lateral neck (patient's right) -->
+        <g class="exam-hotspot" data-exam="jvp" transform="translate(178,170)">
+          <circle r="13"/>
+          <text text-anchor="middle" dy="4">J</text>
+          <text class="exam-tag" text-anchor="middle" dy="32" font-size="9">JVP</text>
+        </g>
+
+        <!-- Lungs — midway between Radial and BP, lateral to right arm -->
+        <g class="exam-hotspot icon-lung" data-exam="lungs" transform="translate(72,316)">
+          <ellipse cx="-6" cy="0" rx="5" ry="11"/>
+          <ellipse cx="6" cy="0" rx="5" ry="11"/>
+          <line x1="0" y1="-9" x2="0" y2="8"/>
+          <text class="exam-tag" text-anchor="middle" dy="-15" font-size="9">Lungs</text>
+        </g>
+
+        <!-- Palpable thrill — patient's left of midline (hand icon) -->
+        <g class="exam-hotspot icon-hand" data-exam="thrill" transform="translate(305,235)">
+          <rect x="-8" y="-11" width="3" height="10" rx="1.5"/>
+          <rect x="-3.5" y="-13" width="3" height="12" rx="1.5"/>
+          <rect x="0.5" y="-13" width="3" height="12" rx="1.5"/>
+          <rect x="5" y="-11" width="3" height="10" rx="1.5"/>
+          <rect x="-9" y="-3" width="18" height="13" rx="3"/>
+          <rect x="-13" y="0" width="4" height="9" rx="2" transform="rotate(-20 -11 4)"/>
+          <text class="exam-tag" text-anchor="middle" dy="-19" font-size="9">Thrill</text>
+        </g>
+
+        <!-- RV heave — parasternal, patient's left of midline (hand icon) -->
+        <g class="exam-hotspot icon-hand" data-exam="rvheave" transform="translate(315,290)">
+          <rect x="-8" y="-11" width="3" height="10" rx="1.5"/>
+          <rect x="-3.5" y="-13" width="3" height="12" rx="1.5"/>
+          <rect x="0.5" y="-13" width="3" height="12" rx="1.5"/>
+          <rect x="5" y="-11" width="3" height="10" rx="1.5"/>
+          <rect x="-9" y="-3" width="18" height="13" rx="3"/>
+          <rect x="-13" y="0" width="4" height="9" rx="2" transform="rotate(-20 -11 4)"/>
+          <text class="exam-tag" text-anchor="middle" dy="22" font-size="9">RV heave</text>
+        </g>
+
+        <!-- Apex palpation — near apex auscultation (hand icon) -->
+        <g class="exam-hotspot icon-hand" data-exam="apex" transform="translate(375,388)">
+          <rect x="-8" y="-11" width="3" height="10" rx="1.5"/>
+          <rect x="-3.5" y="-13" width="3" height="12" rx="1.5"/>
+          <rect x="0.5" y="-13" width="3" height="12" rx="1.5"/>
+          <rect x="5" y="-11" width="3" height="10" rx="1.5"/>
+          <rect x="-9" y="-3" width="18" height="13" rx="3"/>
+          <rect x="-13" y="0" width="4" height="9" rx="2" transform="rotate(-20 -11 4)"/>
+          <text class="exam-tag" text-anchor="middle" dy="22" font-size="9">Palpate apex</text>
+        </g>
+
+        <!-- Peripheries — on the patient's right foot -->
+        <g class="exam-hotspot" data-exam="periph" transform="translate(215,582)">
+          <circle r="13"/>
+          <text text-anchor="middle" dy="4">P</text>
+          <text class="exam-tag" text-anchor="middle" dy="-19" font-size="9">Peripheries</text>
+        </g>
+      </svg>
+    </div>
+    </div><!-- /patient-area -->
+
+    <!-- Carotid pulse + cycle visualiser (handout-style) -->
+    <div class="pulse-area">
+      <div class="pulse-area-header">
+        <div class="carotid-light" id="carotidLight">● CAROTID PULSE</div>
+        <div class="cycle-info" id="cycleInfo">— BPM</div>
+      </div>
+      <div class="cycle-stage" id="cycleStage">
+        <div class="baseline"></div>
+        <!-- bars + cursor injected by JS -->
+      </div>
+      <div id="cycleNote" style="font-size:11px;color:var(--muted);margin-top:6px;font-weight:600">
+        Black bars = S1 &middot; Pink bar = S2 &middot; Shaded zone = when the murmur occurs &middot;
+        Carotid pulse flashes during systole — use it to time what you hear.
+      </div>
+    </div>
+
+    <div class="listening-info">
+      <div>
+        Listening at:
+        <span id="locLabel"><b>—</b></span>
+        <span id="manLabel" class="badge" style="display:none"></span>
+      </div>
+      <div class="loudness-pill" id="murmurLoudness">Loudness: —</div>
+    </div>
+
+    <div class="help-bar">
+      Pink circles = listen with the stethoscope · Teal circles = palpate / inspect
+    </div>
+  </div>
+
+  <!-- ============== RIGHT: EXAMINER DISCUSSION FLOW ============== -->
+  <div class="panel" id="rightPanel">
+    <div class="pill pink" id="rightTitle">Examination</div>
+    <div id="rightSub" class="right-sub" style="display:none"></div>
+    <div id="instructBox" class="instruct-box">
+      <div class="instruct-title">Welcome to the Cardiac Confidence Lab</div>
+      <p><strong>6 textbook cardiac cases</strong> — Think of this as brain training of your cardiac short case: sort out your top diagnosis, argue through your differentials, and assess severity. Real patients are more subtle and may have more than one murmur — but mastering the archetypes here gives you the framework to tackle those more subtle scenarios and discuss your findings confidently</p>
+      <ul>
+        <li>Tap the <strong>teal markers</strong> on the patient to uncover examination findings.</li>
+        <li>Click an <strong>auscultation spot</strong> to listen, then explore manoeuvres, positions, and stethoscope pieces.</li>
+        <li>The <strong>carotid pulse light</strong> flashes during systole — use it to time the murmur.</li>
+        <li>Hit <strong>Face the Examiners</strong> when you're ready to present.</li>
+      </ul>
+      <p style="margin:6px 0 0;font-style:italic;font-size:11.5px;color:var(--muted)">Have fun!</p>
+    </div>
+    <div id="discussionFlow"></div>
+    <button id="faceBtn" class="btn primary" style="margin-top:10px">
+      Face the examiners →
+    </button>
+  </div>
+
+</div>
+
+<!-- ============== EXAMINER DISCUSSION SCREEN ============== -->
+<div id="examinerScreen">
+  <div class="exam-screen-inner">
+    <div class="exam-screen-header">
+      <div class="exam-screen-title">
+        Examiner Discussion
+        <span class="script-em">face the panel</span>
+      </div>
+      <div class="case-count" id="examCaseCount">Case 1 of 6</div>
+    </div>
+    <div id="examScreenBody"></div>
+  </div>
+</div>
+
+<!-- Feedback overlay -->
+<div class="feedback-overlay" id="feedbackOverlay">
+  <div class="feedback-box" id="feedbackBox"></div>
+</div>
+
+<!-- Heart mascot — simple SVG cardio heart -->
+<svg class="mascot" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 85 C 18 60, 10 38, 28 24 C 40 15, 50 28, 50 35
+           C 50 28, 60 15, 72 24 C 90 38, 82 60, 50 85 Z"
+        fill="#E91E63" stroke="#1A1A1A" stroke-width="3"/>
+  <!-- little eyes + smile -->
+  <circle cx="40" cy="46" r="3" fill="#1A1A1A"/>
+  <circle cx="60" cy="46" r="3" fill="#1A1A1A"/>
+  <path d="M40 56 Q50 64 60 56" stroke="#1A1A1A" stroke-width="2.5"
+        fill="none" stroke-linecap="round"/>
+</svg>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   CARDIAC CONFIDENCE LAB — AUSCULTATION SIMULATOR
+   Brand-styled single-file game.
+   ===================================================================== */
+
+/* ---------- 1. CASE DATA ----------------------------------------- */
+const CASES = {
+  AS: {
+    id: "AS", name: "Aortic Stenosis", severity: "severe", timing: "systolic",
+    bpm: 72, murmurType: "ejection-systolic",
+    pitch: "harsh", bestSteth: "diaphragm", bestPosition: "sitForward", s2Soft: true,
+    locations: { aortic:1.0, pulmonary:0.5, tricuspid:0.55, apex:0.5, carotid:0.9, axilla:0.15 },
+    maneuvers: { none:1.0, inspire:0.92, expire:1.2, valsalva:0.55, handgrip:0.62, squat:1.15 },
+    positions:{ supine:1.0, leftLateral:1.0, sitForward:1.05 },
+    steth:    { diaphragm:1.0, bell:0.5 },
+    examFindings: {
+      radial:  { label:"Radial pulse",     finding:"Regular, rate 72",                            severityFlag:false },
+      carotid: { label:"Carotid pulse",    finding:"Slow rising, low volume",                     severityFlag:true  },
+      bp:      { label:"Blood pressure",   finding:"108/86 mmHg",                                  severityFlag:true  },
+      jvp:     { label:"JVP",              finding:"3 cm above the sternal angle",                severityFlag:false },
+      apex:    { label:"Apex beat",        finding:"Undisplaced, heaving",                         severityFlag:true  },
+      rvheave: { label:"Parasternal heave",finding:"No parasternal heave",                         severityFlag:false },
+      thrill:  { label:"Palpable thrill",  finding:"Systolic thrill at the 2nd right intercostal space", severityFlag:true },
+      lungs:   { label:"Lung fields",      finding:"Fine bibasal end-inspiratory crackles",        severityFlag:true  },
+      periph:  { label:"Peripheries",      finding:"No peripheral oedema",                         severityFlag:false }
+    },
+    teaching: {
+      summary: "Ejection systolic crescendo–decrescendo murmur, loudest at the aortic area, radiating to the carotids. Slow-rising pulse. S2 may be soft.",
+      hallmarks: [
+        "Crescendo–decrescendo (ejection) systolic murmur",
+        "Loudest at 2nd right intercostal space (aortic area)",
+        "Radiates to carotids",
+        "Slow-rising / parvus-et-tardus carotid pulse",
+        "Softer with Valsalva (↓ preload reduces flow across the valve)",
+        "Soft or absent S2 if severe",
+        "Best heard with diaphragm, patient sitting forward in expiration"
+      ],
+      against: [
+        "Does NOT radiate to carotid → think HOCM",
+        "Holosystolic 'blowing' at apex → think MR",
+        "Late systolic with click → think MVP",
+        "Diastolic → think AR or MS"
+      ]
+    }
+  },
+  AR: {
+    id: "AR", name: "Aortic Regurgitation", severity: "severe", timing: "diastolic",
+    bpm: 62, murmurType: "early-diastolic-decrescendo",
+    s2Soft: true,   // A2 absent/soft — aortic valve doesn't close forcefully
+    pitch: "blowing-high", bestSteth: "diaphragm", bestPosition: "sitForward",
+    locations: { aortic:0.7, pulmonary:0.55, tricuspid:1.0, apex:0.5, carotid:0.2, axilla:0.1 },
+    maneuvers: { none:1.0, inspire:0.95, expire:1.2, valsalva:0.7, handgrip:1.4, squat:1.25 },
+    positions:{ supine:0.85, leftLateral:0.9, sitForward:1.4 },
+    steth:    { diaphragm:1.0, bell:0.5 },
+    examFindings: {
+      radial:  { label:"Radial pulse",     finding:"Regular, rate 84",                            severityFlag:false },
+      carotid: { label:"Carotid pulse",    finding:"Collapsing, high volume",                      severityFlag:true  },
+      bp:      { label:"Blood pressure",   finding:"168/52 mmHg",                                  severityFlag:true  },
+      jvp:     { label:"JVP",              finding:"3 cm above the sternal angle",                severityFlag:false },
+      apex:    { label:"Apex beat",        finding:"Displaced, diffuse",                         severityFlag:true  },
+      rvheave: { label:"Parasternal heave",finding:"No parasternal heave",                         severityFlag:false },
+      thrill:  { label:"Palpable thrill",  finding:"No palpable thrill",                           severityFlag:false },
+      lungs:   { label:"Lung fields",      finding:"Clear",                                        severityFlag:false },
+      periph:  { label:"Peripheries",      finding:"Head bobbing visible; nail-bed capillary pulsation", severityFlag:true }
+    },
+    teaching: {
+      summary: "Early diastolic decrescendo high-pitched 'blowing' murmur, loudest at Erb's point with the patient sitting forward in held expiration.",
+      hallmarks: [
+        "Early diastolic decrescendo, high-pitched 'blowing'",
+        "Loudest at LLSE / Erb's point (3rd–4th LICS)",
+        "Sit forward, breath held in expiration",
+        "Louder with handgrip (↑ afterload)",
+        "Wide pulse pressure / collapsing pulse",
+        "May have Austin Flint murmur at the apex"
+      ],
+      against: [
+        "Mid-diastolic rumble with opening snap → MS",
+        "Systolic murmur → AS / MR / HOCM",
+        "Best with bell at apex → MS"
+      ]
+    }
+  },
+  MS: {
+    id: "MS", name: "Mitral Stenosis", severity: "severe", timing: "diastolic",
+    bpm: 78, murmurType: "mid-diastolic-rumble",
+    pitch: "low-rumble", bestSteth: "bell", bestPosition: "leftLateral",
+    openingSnap: true, loudS1: true,
+    locations: { aortic:0.2, pulmonary:0.3, tricuspid:0.45, apex:1.0, carotid:0.05, axilla:0.1 },
+    maneuvers: { none:1.0, inspire:0.65, expire:1.45, valsalva:0.7, handgrip:1.15, squat:1.2 },
+    positions:{ supine:0.9, leftLateral:1.5, sitForward:0.9 },
+    steth:    { diaphragm:0.4, bell:1.0 },
+    examFindings: {
+      radial:  { label:"Radial pulse",     finding:"Irregularly irregular, rate ~110",            severityFlag:true  },
+      carotid: { label:"Carotid pulse",    finding:"Normal character and volume",                  severityFlag:false },
+      bp:      { label:"Blood pressure",   finding:"118/76 mmHg",                                  severityFlag:false },
+      jvp:     { label:"JVP",              finding:"6 cm above the sternal angle", severityFlag:true },
+      apex:    { label:"Apex beat",        finding:"Undisplaced, tapping",                         severityFlag:true  },
+      rvheave: { label:"Parasternal heave",finding:"Parasternal heave present",                    severityFlag:true  },
+      thrill:  { label:"Palpable thrill",  finding:"No palpable thrill",                           severityFlag:false },
+      lungs:   { label:"Lung fields",      finding:"Fine bibasal crackles",                        severityFlag:true  },
+      periph:  { label:"Peripheries",      finding:"Malar flush; mild ankle oedema",               severityFlag:true  }
+    },
+    teaching: {
+      summary: "Mid-diastolic low-pitched rumbling murmur, loudest at the apex with the BELL, patient in the left lateral decubitus position. Loud S1 (in this recording), opening snap after S2. Irregularly irregular radial pulse (AF).",
+      hallmarks: [
+        "Mid-diastolic LOW-pitched rumble",
+        "Apex with the BELL — left lateral decubitus",
+        "Loud S1 + opening snap after S2 (S1 becomes soft only in severe calcified MS)",
+        "Irregularly irregular radial pulse (AF) — carotid pulse is normal volume and character",
+        "Pre-systolic accentuation if sinus rhythm",
+        "Parasternal (RV) heave + loud P2 — pulmonary hypertension",
+        "Malar flush; tapping apex beat"
+      ],
+      against: [
+        "High-pitched diastolic at LLSE on diaphragm → AR",
+        "Systolic → AS / MR / HOCM / MVP",
+        "Pansystolic radiating to axilla → MR"
+      ]
+    }
+  },
+  MR: {
+    id: "MR", name: "Mitral Regurgitation", severity: "severe", timing: "systolic",
+    bpm: 80, murmurType: "pansystolic",
+    pitch: "blowing-high", bestSteth: "diaphragm", bestPosition: "leftLateral",
+    softS1: true,
+    locations: { aortic:0.3, pulmonary:0.35, tricuspid:0.6, apex:1.0, carotid:0.05, axilla:0.85 },
+    maneuvers: { none:1.0, inspire:0.95, expire:1.2, valsalva:0.8, handgrip:1.4, squat:1.25 },
+    positions:{ supine:0.95, leftLateral:1.2, sitForward:0.95 },
+    steth:    { diaphragm:1.0, bell:0.55 },
+    examFindings: {
+      radial:  { label:"Radial pulse",     finding:"Regular, rate 80",                             severityFlag:false },
+      carotid: { label:"Carotid pulse",    finding:"Normal character and volume",                   severityFlag:false },
+      bp:      { label:"Blood pressure",   finding:"126/78 mmHg",                                   severityFlag:false },
+      jvp:     { label:"JVP",              finding:"5 cm above the sternal angle",                  severityFlag:true  },
+      apex:    { label:"Apex beat",        finding:"Displaced, diffuse",                          severityFlag:true  },
+      rvheave: { label:"Parasternal heave",finding:"No parasternal heave",                          severityFlag:false },
+      thrill:  { label:"Palpable thrill",  finding:"Systolic thrill at the apex",                   severityFlag:true  },
+      lungs:   { label:"Lung fields",      finding:"Fine bibasal crackles",                         severityFlag:true  },
+      periph:  { label:"Peripheries",      finding:"Mild ankle oedema",                             severityFlag:true  }
+    },
+    teaching: {
+      summary: "High-pitched pansystolic 'blowing' murmur at the apex, radiating to the axilla. Louder with handgrip and expiration. Soft S1; possible S3 if severe.",
+      hallmarks: [
+        "Pansystolic high-pitched 'blowing' — constant intensity S1 to S2",
+        "Apex, with the diaphragm",
+        "Radiates to the AXILLA (not the carotids)",
+        "Louder with handgrip (↑ afterload) and expiration",
+        "Soft S1; S3 may be present if severe",
+        "Displaced, diffuse apex beat (volume overload)",
+        "Sometimes louder in left lateral position"
+      ],
+      against: [
+        "Radiates to carotid → AS",
+        "Crescendo–decrescendo → AS",
+        "Louder with Valsalva → HOCM",
+        "Click + late systolic → MVP",
+        "Diastolic component → MS / AR"
+      ]
+    }
+  },
+  HOCM: {
+    id: "HOCM", name: "Hypertrophic Obstructive Cardiomyopathy", severity: "severe", timing: "systolic",
+    bpm: 76, murmurType: "ejection-systolic",
+    pitch: "harsh", bestSteth: "diaphragm", bestPosition: "supine",
+    s4: true,
+    locations: { aortic:0.4, pulmonary:0.45, tricuspid:1.0, apex:0.65, carotid:0.05, axilla:0.15 },
+    maneuvers: { none:1.0, inspire:0.95, expire:1.2, valsalva:1.6, handgrip:0.65, squat:0.55 },
+    positions:{ supine:1.0, leftLateral:1.0, sitForward:0.95 },
+    steth:    { diaphragm:1.0, bell:0.6 },
+    examFindings: {
+      radial:  { label:"Radial pulse",     finding:"Regular, rate 75",                             severityFlag:false },
+      carotid: { label:"Carotid pulse",    finding:"Brisk upstroke with a double peak",            severityFlag:true  },
+      bp:      { label:"Blood pressure",   finding:"132/82 mmHg",                                   severityFlag:false },
+      jvp:     { label:"JVP",              finding:"3 cm above the sternal angle",                  severityFlag:false },
+      apex:    { label:"Apex beat",        finding:"Undisplaced, double impulse",                   severityFlag:true  },
+      rvheave: { label:"Parasternal heave",finding:"No parasternal heave",                          severityFlag:false },
+      thrill:  { label:"Palpable thrill",  finding:"Systolic thrill at the lower left sternal edge",severityFlag:true  },
+      lungs:   { label:"Lung fields",      finding:"Clear",                                          severityFlag:false },
+      periph:  { label:"Peripheries",      finding:"No peripheral oedema; S4 audible at apex",       severityFlag:false }
+    },
+    teaching: {
+      summary: "Ejection systolic murmur at the lower left sternal edge, that gets LOUDER with Valsalva and expiration, and softer with handgrip. Does not radiate to carotids. Jerky bisferiens pulse.",
+      hallmarks: [
+        "Ejection systolic murmur at LLSE",
+        "Does NOT radiate to carotids",
+        "LOUDER with Valsalva (↓ preload unmasks obstruction) and expiration (left-sided murmur)",
+        "SOFTER with handgrip (↑ afterload increases LV filling)",
+        "Jerky / bisferiens carotid pulse",
+        "Often an S4",
+        "May be associated with a double-impulse apex beat"
+      ],
+      against: [
+        "Radiates to carotids → think AS",
+        "Softer with Valsalva → think AS",
+        "Louder with expiration + pansystolic blowing at apex → think MR",
+        "Late systolic click + murmur → think MVP"
+      ]
+    }
+  },
+  MVP: {
+    id: "MVP", name: "Mitral Valve Prolapse", severity: "mild-moderate", timing: "systolic",
+    bpm: 74, murmurType: "mid-late-systolic-click",
+    pitch: "click-plus-blow", bestSteth: "diaphragm", bestPosition: "supine",
+    locations: { aortic:0.25, pulmonary:0.3, tricuspid:0.55, apex:1.0, carotid:0.05, axilla:0.4 },
+    maneuvers: { none:1.0, inspire:0.95, expire:1.05, valsalva:1.3, handgrip:0.85, squat:0.85 },
+    positions:{ supine:1.0, leftLateral:1.1, sitForward:0.95 },
+    steth:    { diaphragm:1.0, bell:0.55 },
+    examFindings: {
+      radial:  { label:"Radial pulse",     finding:"Regular, rate 74",                              severityFlag:false },
+      carotid: { label:"Carotid pulse",    finding:"Normal character and volume",                   severityFlag:false },
+      bp:      { label:"Blood pressure",   finding:"118/74 mmHg",                                   severityFlag:false },
+      jvp:     { label:"JVP",              finding:"3 cm above the sternal angle",                  severityFlag:false },
+      apex:    { label:"Apex beat",        finding:"Undisplaced",                                   severityFlag:false },
+      rvheave: { label:"Parasternal heave",finding:"No parasternal heave",                          severityFlag:false },
+      thrill:  { label:"Palpable thrill",  finding:"No palpable thrill",                            severityFlag:false },
+      lungs:   { label:"Lung fields",      finding:"Clear",                                          severityFlag:false },
+      periph:  { label:"Peripheries",      finding:"Slim build; otherwise unremarkable",            severityFlag:false }
+    },
+    teaching: {
+      summary: "Mid-systolic click followed by a late-systolic murmur, loudest at the apex. The click moves EARLIER (and the murmur lengthens) with Valsalva, LATER with handgrip (shorter murmur).",
+      hallmarks: [
+        "Mid-systolic click then late-systolic murmur",
+        "Loudest at apex",
+        "Click moves EARLIER with Valsalva (longer murmur)",
+        "Click moves LATER with handgrip (shorter murmur)",
+        "May radiate to axilla if associated with significant MR",
+        "Often young, slim patient; may have palpitations"
+      ],
+      against: [
+        "No click → AS / MR",
+        "Loudest at LLSE, louder with Valsalva, no click → HOCM",
+        "Diastolic → MS / AR",
+        "Radiates to carotid → AS"
+      ]
+    }
+  }
+};
+
+const CASE_ORDER = ["AS", "MR", "MS", "AR", "HOCM", "MVP"];
+
+/* Confirmed audio filenames hosted at DEFAULT_AUDIO_BASE.
+   HOCM shares the ejection-systolic recording with AS. */
+const CASE_AUDIO_FILE = {
+  AS:   "early-systolic-murmur.mp3",
+  MR:   "pansystolic-murmur.mp3",
+  MS:   "mid-diastolic-murmur.mp3",
+  AR:   "early-diastolic-murmur.mp3",
+  HOCM: "early-systolic-murmur.mp3",
+  MVP:  "late-systolic-murmur.mp3",
+};
+/* Default base URL — can be overridden with window.AUDIO_BASE_URL or data-audio-base on <html> */
+const DEFAULT_AUDIO_BASE = "https://clinicalskillslab.github.io/lab/assets/audio/cardiac";
+
+/* Extra differentials — candidates should be able to talk through these
+   even though we don't yet have playable cases for them. */
+Object.assign(CASES, {
+  TR:   { id:"TR",   name:"Tricuspid Regurgitation",  timing:"systolic"  },
+  VSD:  { id:"VSD",  name:"Ventricular Septal Defect", timing:"systolic"  },
+  PS:   { id:"PS",   name:"Pulmonary Stenosis",        timing:"systolic"  },
+  AScl: { id:"AScl", name:"Aortic Sclerosis",          timing:"systolic"  },
+  PR:   { id:"PR",   name:"Pulmonary Regurgitation",   timing:"diastolic" },
+  TS:   { id:"TS",   name:"Tricuspid Stenosis",        timing:"diastolic" }
+});
+const ALL_DX = [
+  ...CASE_ORDER.map(k => ({ id:k, name: CASES[k].name })),
+  { id:"TR",   name:"Tricuspid Regurgitation" },
+  { id:"VSD",  name:"Ventricular Septal Defect" },
+  { id:"PS",   name:"Pulmonary Stenosis" },
+  { id:"AScl", name:"Aortic Sclerosis" },
+  { id:"PR",   name:"Pulmonary Regurgitation" },
+  { id:"TS",   name:"Tricuspid Stenosis" }
+];
+
+const FEATURES = [
+  /* --- Murmur character & timing --- */
+  { id:"timing-systolic",    label:"Murmur is systolic" },
+  { id:"timing-diastolic",   label:"Murmur is diastolic" },
+  { id:"crescendo-decres",   label:"Crescendo–decrescendo (ejection)" },
+  { id:"pansystolic",        label:"Pansystolic / holosystolic (constant intensity)" },
+  { id:"late-systolic-click",label:"Late-systolic with a click" },
+  { id:"low-pitch-rumble",   label:"Low-pitched mid-diastolic rumble" },
+  { id:"early-dia-blowing",  label:"Early diastolic high-pitched 'blowing'" },
+  /* --- Location & radiation --- */
+  { id:"loc-aortic",         label:"Loudest at the aortic area (2nd RICS)" },
+  { id:"loc-pulmonary",      label:"Loudest at the pulmonary area (2nd LICS)" },
+  { id:"loc-llse",           label:"Loudest at the LLSE / tricuspid area" },
+  { id:"loc-apex",           label:"Loudest at the apex" },
+  { id:"radiates-carotid",   label:"Radiates to the carotids" },
+  { id:"radiates-axilla",    label:"Radiates to the axilla" },
+  { id:"no-radiation",       label:"Does NOT radiate to the carotids" },
+  /* --- Respiration --- */
+  { id:"louder-inspire",     label:"Louder with inspiration" },
+  { id:"louder-expire",      label:"Louder with expiration" },
+  /* --- Maneuvers --- */
+  { id:"louder-valsalva",    label:"Louder with Valsalva" },
+  { id:"softer-valsalva",    label:"Softer with Valsalva" },
+  { id:"louder-handgrip",    label:"Louder with handgrip" },
+  { id:"softer-handgrip",    label:"Softer with handgrip" },
+  { id:"better-leftlat",     label:"Louder in left lateral decubitus" },
+  { id:"better-sitfwd",      label:"Louder sitting forward in expiration" },
+  /* --- Stethoscope --- */
+  { id:"best-bell",          label:"Best heard with the bell" },
+  { id:"best-diaphragm",     label:"Best heard with the diaphragm" },
+  /* --- Pulse character --- */
+  { id:"slow-rising-pulse",  label:"Slow-rising carotid pulse" },
+  { id:"collapsing-pulse",   label:"Collapsing / water-hammer pulse" },
+  { id:"jerky-pulse",        label:"Jerky / double-peak carotid pulse" },
+  { id:"af-pulse",           label:"Irregularly irregular pulse" },
+  /* --- Blood pressure --- */
+  { id:"narrow-pp",          label:"Narrow pulse pressure" },
+  { id:"wide-pp",            label:"Wide pulse pressure" },
+  /* --- JVP & right-heart signs --- */
+  { id:"raised-jvp",         label:"Raised JVP" },
+  { id:"prominent-vwave",    label:"Prominent V wave on JVP" },
+  { id:"pulsatile-liver",    label:"Pulsatile liver" },
+  { id:"peripheral-oedema",  label:"Peripheral oedema" },
+  { id:"rv-heave",           label:"Parasternal (RV) heave" },
+  { id:"loud-p2",            label:"Loud P2 (pulmonary hypertension)" },
+  /* --- Apex character --- */
+  { id:"undisplaced-apex",   label:"Undisplaced apex beat" },
+  { id:"displaced-apex",     label:"Displaced apex beat" },
+  { id:"heaving-apex",       label:"Heaving apex beat (pressure overload)" },
+  { id:"diffuse-apex",       label:"Diffuse apex beat (volume overload)" },
+  { id:"tapping-apex",       label:"Tapping apex beat" },
+  { id:"double-apex",        label:"Double-impulse apex beat" },
+  /* --- Thrill --- */
+  { id:"palp-thrill",        label:"Palpable thrill on the precordium" }
+];
+
+const FEATURE_SUPPORT = {
+  AS:   ["timing-systolic","crescendo-decres","loc-aortic","radiates-carotid","softer-valsalva","softer-handgrip","louder-expire",
+         "slow-rising-pulse","heaving-apex"],
+  AR:   ["timing-diastolic","early-dia-blowing","loc-llse","louder-handgrip","louder-expire","better-sitfwd","best-diaphragm",
+         "collapsing-pulse","wide-pp","displaced-apex","diffuse-apex"],
+  MS:   ["timing-diastolic","low-pitch-rumble","loc-apex","better-leftlat","louder-expire","best-bell",
+         "af-pulse","tapping-apex","loud-p2","rv-heave"],
+  MR:   ["timing-systolic","pansystolic","loc-apex","no-radiation","radiates-axilla","louder-handgrip","louder-expire","best-diaphragm",
+         "displaced-apex","diffuse-apex"],
+  HOCM: ["timing-systolic","crescendo-decres","loc-llse","no-radiation","louder-valsalva","louder-expire","softer-handgrip","best-diaphragm",
+         "jerky-pulse","double-apex"],
+  MVP:  ["timing-systolic","late-systolic-click","loc-apex","best-diaphragm","louder-valsalva","louder-expire"],
+  /* Extras */
+  TR:   ["timing-systolic","pansystolic","loc-llse","no-radiation",
+         "louder-inspire","raised-jvp","prominent-vwave","pulsatile-liver","peripheral-oedema","rv-heave"],
+  VSD:  ["timing-systolic","pansystolic","loc-llse","palp-thrill"],
+  PS:   ["timing-systolic","crescendo-decres","loc-pulmonary","best-diaphragm",
+         "louder-inspire","rv-heave","palp-thrill"],
+  AScl: ["timing-systolic","crescendo-decres","loc-aortic","no-radiation"],
+  PR:   ["timing-diastolic","early-dia-blowing","loc-llse","loc-pulmonary","best-diaphragm",
+         "louder-inspire","loud-p2","rv-heave"],
+  TS:   ["timing-diastolic","low-pitch-rumble","loc-llse","best-bell",
+         "louder-inspire","raised-jvp","peripheral-oedema","pulsatile-liver"]
+};
+const FEATURES_BY_ID = Object.fromEntries(FEATURES.map(f => [f.id, f.label]));
+
+/* "Against" features for each dx — used when arguing why it ISN'T diagnosis X.
+   A feature is valid in a case only if it is BOTH in FEATURE_SUPPORT[caseId]
+   AND in this list for the relevant differential. */
+const AGAINST_FEATURES = {
+  // AS is softer with handgrip; does NOT cause double-impulse apex or jerky pulse
+  AS:   ["no-radiation","radiates-axilla","pansystolic","late-systolic-click","timing-diastolic","louder-valsalva","louder-handgrip","loc-apex","loc-llse","loc-pulmonary",
+         "louder-inspire","collapsing-pulse","wide-pp","displaced-apex","diffuse-apex","raised-jvp","prominent-vwave","pulsatile-liver","rv-heave","tapping-apex",
+         "double-apex","jerky-pulse"],
+  // AR: softer-handgrip, louder-valsalva, better-leftlat all argue against AR
+  AR:   ["timing-systolic","crescendo-decres","pansystolic","loc-apex","best-bell","low-pitch-rumble","radiates-axilla","late-systolic-click",
+         "louder-inspire","slow-rising-pulse","narrow-pp","softer-handgrip","louder-valsalva","better-leftlat","tapping-apex","raised-jvp","prominent-vwave","pulsatile-liver"],
+  // MS is softer with Valsalva
+  MS:   ["timing-systolic","early-dia-blowing","loc-llse","loc-aortic","best-diaphragm","radiates-carotid","radiates-axilla","late-systolic-click","crescendo-decres","pansystolic",
+         "louder-valsalva","collapsing-pulse","wide-pp","displaced-apex","diffuse-apex"],
+  // MR is louder with handgrip → softer-handgrip argues against MR; no double-apex or jerky pulse
+  MR:   ["radiates-carotid","crescendo-decres","louder-valsalva","late-systolic-click","timing-diastolic","loc-aortic","loc-llse","loc-pulmonary","low-pitch-rumble",
+         "louder-inspire","slow-rising-pulse","narrow-pp","softer-handgrip","tapping-apex","undisplaced-apex",
+         "double-apex","jerky-pulse"],
+  // HOCM is softer with handgrip
+  HOCM: ["radiates-carotid","radiates-axilla","softer-valsalva","louder-handgrip","pansystolic","late-systolic-click","loc-apex","loc-aortic","timing-diastolic","low-pitch-rumble","early-dia-blowing",
+         "louder-inspire","collapsing-pulse","slow-rising-pulse","narrow-pp","wide-pp","displaced-apex","diffuse-apex","tapping-apex","raised-jvp"],
+  // MVP: no double-impulse apex or jerky pulse
+  MVP:  ["pansystolic","radiates-carotid","loc-llse","loc-aortic","timing-diastolic","softer-valsalva","louder-handgrip","crescendo-decres","early-dia-blowing","low-pitch-rumble",
+         "louder-inspire","raised-jvp","pulsatile-liver","displaced-apex","diffuse-apex","slow-rising-pulse","wide-pp","narrow-pp",
+         "double-apex","jerky-pulse"],
+  /* Extras */
+  // TR: right-sided, no double-impulse apex or jerky pulse
+  TR:   ["loc-aortic","loc-apex","loc-pulmonary","radiates-carotid","radiates-axilla","crescendo-decres","late-systolic-click","timing-diastolic","early-dia-blowing","low-pitch-rumble",
+         "louder-expire","collapsing-pulse","narrow-pp","wide-pp","slow-rising-pulse","displaced-apex","diffuse-apex","best-bell",
+         "double-apex","jerky-pulse"],
+  // VSD: no axilla radiation; no double-apex or jerky pulse
+  VSD:  ["timing-diastolic","early-dia-blowing","low-pitch-rumble","radiates-carotid","radiates-axilla","late-systolic-click","crescendo-decres","loc-aortic","loc-apex",
+         "louder-inspire","collapsing-pulse","slow-rising-pulse","wide-pp","narrow-pp","tapping-apex","raised-jvp","pulsatile-liver","softer-handgrip",
+         "double-apex","jerky-pulse"],
+  // PS: no double-apex or jerky pulse
+  PS:   ["radiates-carotid","radiates-axilla","loc-aortic","loc-apex","pansystolic","late-systolic-click","timing-diastolic","early-dia-blowing","low-pitch-rumble",
+         "louder-expire","collapsing-pulse","slow-rising-pulse","narrow-pp","wide-pp","displaced-apex","diffuse-apex","tapping-apex",
+         "double-apex","jerky-pulse"],
+  // AScl: no heaving apex (benign flow murmur), no Valsalva response, no double-apex, no jerky pulse
+  AScl: ["radiates-carotid","radiates-axilla","softer-valsalva","louder-valsalva","heaving-apex","loc-apex","loc-llse","louder-handgrip","pansystolic","late-systolic-click","timing-diastolic","low-pitch-rumble","early-dia-blowing",
+         "louder-inspire","slow-rising-pulse","collapsing-pulse","narrow-pp","wide-pp","displaced-apex","diffuse-apex","raised-jvp",
+         "double-apex","jerky-pulse"],
+  // PR does not cause tapping apex; NOT best heard sitting forward
+  PR:   ["timing-systolic","crescendo-decres","pansystolic","loc-apex","loc-aortic","late-systolic-click",
+         "louder-expire","louder-handgrip","tapping-apex","better-sitfwd","collapsing-pulse","slow-rising-pulse","wide-pp","narrow-pp","displaced-apex","diffuse-apex"],
+  // TS is right-sided, NOT best heard sitting forward
+  TS:   ["timing-systolic","loc-aortic","loc-apex","radiates-carotid","crescendo-decres","pansystolic","early-dia-blowing","late-systolic-click",
+         "louder-expire","better-sitfwd","collapsing-pulse","wide-pp","displaced-apex","diffuse-apex"]
+};
+
+/* Severity signs — "select all that apply". `correct:true` are real signs of severity;
+   the rest are plausible distractors. */
+const SEVERITY_FEATURES = {
+  AS: {
+    name: "Severe aortic stenosis",
+    items: [
+      { id:"as-pulse",   label:"Slow rising / parvus-et-tardus carotid pulse",          correct:true,  presentInCase:true  },
+      { id:"as-narrow",  label:"Narrow pulse pressure",                                 correct:true,  presentInCase:true  },
+      { id:"as-soft-s2", label:"Soft or absent S2 (A2 component)",                      correct:true,  presentInCase:true  },
+      { id:"as-late",    label:"Late-peaking ejection systolic murmur",                 correct:true,  presentInCase:true  },
+      { id:"as-heave",   label:"Heaving / sustained (pressure-loaded) apex beat",       correct:true,  presentInCase:true  },
+      { id:"as-lhf",     label:"Signs of left heart failure (crackles, ↑JVP, oedema)", correct:true,  presentInCase:true  },
+      { id:"as-s4",      label:"Fourth heart sound (S4 gallop)",                        correct:true,  presentInCase:false },
+      { id:"as-sym",     label:"Symptoms — angina, syncope, exertional dyspnoea",       correct:true,  presentInCase:false },
+      { id:"as-wide",    label:"Wide pulse pressure",                                   correct:false, presentInCase:false },
+      { id:"as-displ",   label:"Displaced heaving apex beat",                           correct:false, presentInCase:false },
+      { id:"as-ax",      label:"Murmur radiating to the axilla",                        correct:false, presentInCase:false }
+    ]
+  },
+  MR: {
+    name: "Severe mitral regurgitation",
+    items: [
+      { id:"mr-softs1",  label:"Soft S1",                                               correct:true,  presentInCase:true  },
+      { id:"mr-displ",   label:"Displaced, diffuse / volume-loaded apex beat",          correct:true,  presentInCase:true  },
+      { id:"mr-lhf",     label:"Signs of left heart failure (crackles, raised JVP)",    correct:true,  presentInCase:true  },
+      { id:"mr-s3",      label:"Third heart sound (S3)",                                correct:true,  presentInCase:false },
+      { id:"mr-loudp2",  label:"Loud P2 (pulmonary hypertension)",                      correct:true,  presentInCase:false },
+      { id:"mr-rvheave", label:"RV / parasternal heave",                                correct:true,  presentInCase:false },
+      { id:"mr-af",      label:"Atrial fibrillation",                                   correct:true,  presentInCase:false },
+      { id:"mr-wides2",  label:"Wide split S2",                                         correct:true,  presentInCase:false },
+      { id:"mr-slow",    label:"Slow rising carotid pulse",                             correct:false, presentInCase:false },
+      { id:"mr-heave",   label:"Heaving (pressure-loaded) apex beat",                   correct:false, presentInCase:false },
+      { id:"mr-carot",   label:"Murmur radiates to the carotids",                       correct:false, presentInCase:false }
+    ]
+  },
+  MS: {
+    name: "Severe mitral stenosis",
+    items: [
+      { id:"ms-shortos", label:"Short A2–OS interval (OS closer to S2 = more severe)",  correct:true,  presentInCase:true  },
+      { id:"ms-longmur", label:"Long mid-diastolic murmur (longer = more severe)",      correct:true,  presentInCase:true  },
+      { id:"ms-loudp2",  label:"Loud P2 / pulmonary hypertension",                      correct:true,  presentInCase:true  },
+      { id:"ms-rhf",     label:"Right heart failure (raised JVP, hepatomegaly, oedema)",correct:true,  presentInCase:true  },
+      { id:"ms-af",      label:"Atrial fibrillation",                                   correct:true,  presentInCase:true  },
+      { id:"ms-rvheave", label:"RV heave / parasternal lift",                           correct:true,  presentInCase:true  },
+      { id:"ms-tap",     label:"Tapping apex beat",                                     correct:true,  presentInCase:true  },
+      { id:"ms-flush",   label:"Malar flush",                                           correct:true,  presentInCase:true  },
+      { id:"ms-softs1",  label:"Soft S1 (calcified/immobile valve — note: S1 is loud in mild-moderate MS)", correct:true, presentInCase:false },
+      { id:"ms-wide",    label:"Wide pulse pressure",                                   correct:false, presentInCase:false },
+      { id:"ms-slow",    label:"Slow rising carotid pulse",                             correct:false, presentInCase:false },
+      { id:"ms-displ",   label:"Displaced heaving apex beat",                           correct:false, presentInCase:false }
+    ]
+  },
+  AR: {
+    name: "Severe aortic regurgitation",
+    items: [
+      /* ── Core severity markers (present in this case) ── */
+      { id:"ar-wide",    label:"Wide pulse pressure / collapsing (water-hammer) pulse", correct:true,  presentInCase:true  },
+      { id:"ar-s3",      label:"S3 (volume loaded LV)",                                correct:true,  presentInCase:true  },
+      { id:"ar-displ",   label:"Displaced, diffuse apex beat (volume overload)",        correct:true,  presentInCase:true  },
+      { id:"ar-long",    label:"Longer duration of the diastolic murmur",              correct:true,  presentInCase:true  },
+      /* ── Other markers of severity (not present in this case) ── */
+      { id:"ar-hf",      label:"Heart failure signs",                                  correct:true,  presentInCase:false },
+      { id:"ar-flint",   label:"Austin Flint murmur at the apex",                      correct:true,  presentInCase:false },
+      /* ── Advanced class: eponymous peripheral signs ── */
+      { id:"ar-quincke", label:"Quincke's sign (nail-bed capillary pulsation)",         correct:true,  presentInCase:false, advanced:true },
+      { id:"ar-corrig",  label:"Corrigan's sign (visible carotid pulsation)",           correct:true,  presentInCase:false, advanced:true },
+      { id:"ar-musset",  label:"de Musset's sign (head bobbing with each pulse)",       correct:true,  presentInCase:false, advanced:true },
+      { id:"ar-muller",  label:"Müller's sign (uvular pulsation)",                      correct:true,  presentInCase:false, advanced:true },
+      { id:"ar-traube",  label:"Traube's sign (pistol-shot femoral pulse)",             correct:true,  presentInCase:false, advanced:true },
+      { id:"ar-dur",     label:"Duroziez's sign (femoral bruit on compression)",        correct:true,  presentInCase:false, advanced:true },
+      /* ── Distractors ── */
+      { id:"ar-slow",    label:"Slow rising carotid pulse",                            correct:false, presentInCase:false },
+      { id:"ar-narrow",  label:"Narrow pulse pressure",                                correct:false, presentInCase:false }
+    ]
+  }
+  /* HOCM and MVP — no exam-style severity stage; their summary still teaches. */
+};
+
+/* ---------- 2. AUDIO ENGINE -------------------------------------- */
+class AudioEngine {
+  constructor() {
+    this.ctx = null; this.master = null; this.murmurGain = null; this.activeNodes = [];
+    this.recordings = {}; this.scheduler = null;
+    this.nextBeatTime = 0; this.lookAhead = 0.1; this.tickMs = 25;
+    this.bpm = 72; this.gain = 0.5;
+    this.caseCfg = null;
+    this.location = "aortic"; this.maneuver = "none";
+    this.position = "supine"; this.steth = "diaphragm";
+    this.playing = false; this.onBeat = null; this.beatBuffer = null;
+  }
+  async init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = this.gain;
+    // murmurGain sits between individual beats and master so gain changes
+    // apply instantly to all currently-playing nodes, not just new ones
+    this.murmurGain = this.ctx.createGain();
+    this.murmurGain.gain.value = 1.0;
+    this.murmurGain.connect(this.master);
+    this.master.connect(this.ctx.destination);
+    await this.tryLoadRecordings();
+  }
+  async tryLoadRecordings() {
+    /* Load all case audio files IN PARALLEL via XMLHttpRequest (XHR is more
+       compatible than fetch in local-file and desktop-app contexts).
+       Each case races independently — a failure on one never blocks others.
+       Falls back to synthesis silently if a file cannot be loaded or decoded.
+       Override the base with: window.AUDIO_BASE_URL = "https://..."
+       or <html data-audio-base="https://..."> */
+    const base = window.AUDIO_BASE_URL
+              || document.documentElement.dataset.audioBase
+              || DEFAULT_AUDIO_BASE;
+    const ctx = this.ctx;
+    const loadOne = (caseId) => new Promise((resolve) => {
+      const filename = CASE_AUDIO_FILE[caseId];
+      if (!filename) { resolve(); return; }
+      const url = `${base}/${filename}`;
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", url, true);
+      xhr.responseType = "arraybuffer";
+      xhr.timeout = 15000;
+      xhr.onload = () => {
+        if (xhr.status < 200 || xhr.status >= 300) { resolve(); return; }
+        // Use traditional callback form — widest browser/WebView support
+        try {
+          ctx.decodeAudioData(
+            xhr.response,
+            (decoded) => { this.recordings[caseId] = decoded; resolve(); },
+            ()        => resolve()   // decode error — fall back to synthesis
+          );
+        } catch(e) { resolve(); }
+      };
+      xhr.onerror   = () => resolve();
+      xhr.ontimeout = () => resolve();
+      xhr.send();
+    });
+    await Promise.all(CASE_ORDER.map(c => loadOne(c)));
+  }
+  applyGain() {
+    if (!this.murmurGain || !this.ctx) return;
+    this.murmurGain.gain.setTargetAtTime(this.computeGain(), this.ctx.currentTime, 0.05);
+  }
+  setCase(cfg)   { this.caseCfg = cfg; this.bpm = cfg.bpm; this.regenerateBeat(); this.applyGain(); }
+  setLocation(l) { this.location = l;  this.regenerateBeat(); this.applyGain(); }
+  setManeuver(m) { this.maneuver = m;  this.regenerateBeat(); this.applyGain(); }
+  setPosition(p) { this.position = p;  this.regenerateBeat(); this.applyGain(); }
+  setSteth(s)    { this.steth = s;     this.regenerateBeat(); this.applyGain(); }
+  setVolume(v)   {
+    this.gain = v;
+    if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+  }
+  computeGain() {
+    if (!this.caseCfg) return 0;
+    const c = this.caseCfg;
+    const locG = c.locations[this.location] ?? 0.1;
+    const manG = c.maneuvers[this.maneuver] ?? 1.0;
+    const posG = c.positions[this.position] ?? 1.0;
+    const sthG = c.steth[this.steth] ?? 1.0;
+    return Math.min(1.4, locG * manG * posG * sthG);
+  }
+  regenerateBeat() {
+    if (!this.ctx || !this.caseCfg) return;
+    // Recordings are keyed by case id (one shared buffer per case/murmur-type)
+    const rec = this.recordings?.[this.caseCfg.id];
+    if (rec) { this.beatBuffer = rec; this.beatIsReal = true; return; }
+    this.beatIsReal = false;
+    this.beatBuffer = this.synthesiseCycle();
+  }
+  synthesiseCycle() {
+    const ctx = this.ctx, sr = ctx.sampleRate, cfg = this.caseCfg;
+    const cycleSec = 60 / cfg.bpm;
+    const len = Math.floor(cycleSec * sr);
+    const buf = ctx.createBuffer(1, len, sr);
+    const data = buf.getChannelData(0);
+    const sysFrac = 0.36;
+    const s1At = 0, s2At = sysFrac * cycleSec;
+    addHeartSound(data, sr, s1At, 45, 0.07, cfg.softS1 ? 0.35 : 0.55);
+    addHeartSound(data, sr, s2At, 70, 0.06, cfg.s2Soft ? 0.25 : 0.45);
+    if (cfg.s4) addHeartSound(data, sr, cycleSec - 0.10, 35, 0.05, 0.18);
+    if (cfg.openingSnap) addHeartSound(data, sr, s2At + 0.07, 110, 0.04, 0.4);
+    addMurmur(data, sr, cfg, s2At, cycleSec, this.maneuver);
+    return buf;
+  }
+  play() {
+    if (!this.ctx || this.playing) return;
+    if (this.ctx.state === "suspended") this.ctx.resume();
+    this.playing = true;
+    this.nextBeatTime = this.ctx.currentTime + 0.12;
+    this.scheduler = setInterval(() => this.tick(), this.tickMs);
+    this.tick();
+  }
+  stop() {
+    this.playing = false;
+    if (this.scheduler) clearInterval(this.scheduler);
+    this.scheduler = null;
+    for (const n of this.activeNodes) { try { n.stop(); } catch(e){} }
+    this.activeNodes = [];
+  }
+  tick() {
+    if (!this.playing) return;
+    while (this.nextBeatTime < this.ctx.currentTime + this.lookAhead) {
+      this.scheduleBeat(this.nextBeatTime);
+      this.nextBeatTime += 60 / this.bpm;
+    }
+  }
+  scheduleBeat(when) {
+    if (!this.beatBuffer) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.beatBuffer;
+    const cycleDur = 60 / this.bpm;
+
+    if (this.beatIsReal) {
+      // Real recordings may have a natural decay tail that extends past the cardiac
+      // cycle length.  Route through a per-beat envelope GainNode and ramp to 0 at
+      // the cycle boundary so audio never spills past the visual S2 marker.
+      const env = this.ctx.createGain();
+      env.gain.setValueAtTime(1, when);
+      // Linear ramp: full volume until 60 ms before cycle end, then fade to 0
+      env.gain.setValueAtTime(1,   when + Math.max(0, cycleDur - 0.06));
+      env.gain.linearRampToValueAtTime(0, when + cycleDur);
+      src.connect(env);
+      env.connect(this.murmurGain);
+      src.start(when);
+      // Let the source node itself play its full duration (or cycle, whichever longer)
+      // so the GainNode fade-out isn't cut short
+      src.stop(when + Math.max(cycleDur, this.beatBuffer.duration) + 0.05);
+    } else {
+      // Synthesised buffers are already exactly one cycle long — no fade needed
+      src.connect(this.murmurGain);
+      src.start(when);
+      src.stop(when + this.beatBuffer.duration + 0.05);
+    }
+
+    this.activeNodes.push(src);
+    this.activeNodes = this.activeNodes.filter(n => n.playbackState !== 3);
+    const delay = (when - this.ctx.currentTime) * 1000;
+    setTimeout(() => this.onBeat?.(when, this.beatBuffer.duration), Math.max(0, delay));
+  }
+}
+
+/* Synthesis helpers */
+function addHeartSound(data, sr, atSec, freq, dur, amp) {
+  const start = Math.floor(atSec * sr), N = Math.floor(dur * sr);
+  for (let i=0; i<N; i++) {
+    const t = i / sr;
+    const env = Math.min(1, t*200) * Math.exp(-t * 25);
+    const tone = Math.sin(2*Math.PI*freq*t);
+    const noise = (Math.random()*2 - 1) * 0.35;
+    const s = amp * env * (tone * 0.8 + noise * 0.2);
+    const idx = start + i;
+    if (idx >= 0 && idx < data.length) data[idx] += s;
+  }
+}
+function addFilteredNoise(data, sr, t0, t1, centerHz, q, ampScale, envFn) {
+  const start = Math.floor(t0 * sr), end = Math.floor(t1 * sr);
+  const N = end - start;
+  if (N <= 0) return;
+  const w = 2 * Math.PI * centerHz / sr;
+  const r = Math.exp(-Math.PI * (centerHz / q) / sr);
+  const a1 = -2 * r * Math.cos(w), a2 = r * r;
+  const b0 = (1 - r) * Math.sqrt(1 - 2*r*Math.cos(2*w) + r*r);
+  let y1 = 0, y2 = 0;
+  for (let i=0; i<N; i++) {
+    const x = (Math.random()*2 - 1);
+    const y = b0 * x - a1 * y1 - a2 * y2;
+    y2 = y1; y1 = y;
+    const idx = start + i;
+    if (idx >= 0 && idx < data.length) data[idx] += y * envFn(i / N) * ampScale;
+  }
+}
+function addMurmur(data, sr, cfg, s2At, cycleSec, maneuver) {
+  let centerHz = 280, q = 4;
+  switch (cfg.pitch) {
+    case "harsh":           centerHz = 260; q = 3;  break;
+    case "blowing-high":    centerHz = 340; q = 5;  break;
+    case "low-rumble":      centerHz = 110; q = 6;  break;
+    case "click-plus-blow": centerHz = 320; q = 4;  break;
+  }
+  switch (cfg.murmurType) {
+    case "ejection-systolic": {
+      const t0 = 0.04, t1 = s2At - 0.02;
+      addFilteredNoise(data, sr, t0, t1, centerHz, q, 0.6,
+        u => Math.exp(-Math.pow((u - 0.5)/0.28, 2)));
+      break;
+    }
+    case "pansystolic": {
+      const t0 = 0.025, t1 = s2At - 0.015;
+      addFilteredNoise(data, sr, t0, t1, centerHz, q, 0.45, u => 0.9);
+      break;
+    }
+    case "early-diastolic-decrescendo": {
+      const t0 = s2At + 0.015;
+      const t1 = s2At + Math.min(0.32, (cycleSec - s2At) * 0.7);
+      addFilteredNoise(data, sr, t0, t1, centerHz, q, 0.55, u => Math.pow(1 - u, 1.5));
+      break;
+    }
+    case "mid-diastolic-rumble": {
+      const t0 = s2At + 0.10;
+      const t1 = Math.min(cycleSec - 0.08, s2At + 0.42);
+      addFilteredNoise(data, sr, t0, t1, centerHz, q, 0.55,
+        u => {
+          const base = Math.pow(1 - u*0.7, 1.2);
+          const pre  = u > 0.78 ? Math.exp(-Math.pow((u-0.93)/0.05,2)) * 0.6 : 0;
+          return base * 0.7 + pre;
+        });
+      break;
+    }
+    case "mid-late-systolic-click": {
+      let clickAt = 0.18;
+      if (maneuver === "valsalva") clickAt = 0.10;
+      else if (maneuver === "handgrip" || maneuver === "squat") clickAt = 0.24;
+      addHeartSound(data, sr, clickAt, 220, 0.025, 0.45);
+      const t0 = clickAt + 0.02, t1 = s2At - 0.015;
+      if (t1 > t0)
+        addFilteredNoise(data, sr, t0, t1, centerHz, q, 0.5, u => Math.pow(u, 1.3) * 0.9 + 0.1);
+      break;
+    }
+  }
+}
+
+/* ---------- 3. GAME CONTROLLER ----------------------------------- */
+const audio = new AudioEngine();
+const state = {
+  caseIndex: 0, caseId: CASE_ORDER[0],
+  location: "aortic", maneuver: "none",
+  position: "supine", steth: "diaphragm",
+  stage: "examine",   // examine | dx | features | otherDx | against | severity | summary
+  d: blankDiscussion()
+};
+function blankDiscussion() {
+  return {
+    // Legacy fields (kept for safety)
+    diagnoses: [], diagnosis: null, diagnosisCorrect: null,
+    featuresFor: [], featureForCorrect: null,
+    otherDx: [], againstCurrent: null,
+    severityChoice: null, severityCorrect: null,
+    // Examination
+    examined: [],
+    // New examiner screen fields
+    topDx: null,             // single selected diagnosis id
+    dxCorrect: null,
+    topFeatures: [],         // selected feature ids (2-3)
+    topFeaturesCorrect: [],  // which of those were correct
+    topFeaturesMissed: [],   // correct features they didn't pick
+    dxSubmitted: false,
+    severitySubmitted: false,
+    againstByDx: {},         // { dxId: featureId }
+    againstCorrectByDx: {},  // { dxId: bool }
+    againstQueue: [],        // ordered list of differential ids for results view
+    diffsSubmitted: false
+  };
+}
+
+const EXAM_BUTTONS = [
+  { key:"radial",  label:"Radial pulse",       hint:"Rate & rhythm" },
+  { key:"carotid", label:"Carotid pulse",      hint:"Volume & character" },
+  { key:"bp",      label:"BP",                  hint:"Blood pressure cuff" },
+  { key:"jvp",     label:"JVP",                 hint:"Jugular venous pressure" },
+  { key:"apex",    label:"Apex beat",          hint:"Palpate the apex" },
+  { key:"rvheave", label:"Parasternal heave",  hint:"Feel for an RV heave" },
+  { key:"thrill",  label:"Palpable thrill",    hint:"Feel the precordium" },
+  { key:"lungs",   label:"Lung fields",        hint:"Auscultate lung bases" },
+  { key:"periph",  label:"Peripheries",        hint:"Inspect & palpate" }
+];
+const els = {};
+function $(s) { return document.querySelector(s); }
+function $$(s){ return Array.from(document.querySelectorAll(s)); }
+
+function init() {
+  Object.assign(els, {
+    caseNum: $("#caseNum"), caseCount: $("#caseCount"),
+    locLabel: $("#locLabel"), manLabel: $("#manLabel"),
+    murmurLoudness: $("#murmurLoudness"),
+    cycleStage: $("#cycleStage"), cycleInfo: $("#cycleInfo"),
+    carotidLight: $("#carotidLight"),
+    rightPanel: $("#rightPanel"), rightTitle: $("#rightTitle"),
+    rightSub: $("#rightSub"), discussionFlow: $("#discussionFlow"),
+    faceBtn: $("#faceBtn"),
+    examFindings: $("#examFindings"),
+    feedbackOverlay: $("#feedbackOverlay"), feedbackBox: $("#feedbackBox"),
+    playBtn: $("#playBtn"), vol: $("#vol")
+  });
+
+  $$("[data-maneuver]").forEach(b => b.addEventListener("click", () => {
+    $$("[data-maneuver]").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    state.maneuver = b.dataset.maneuver;
+    audio.setManeuver(state.maneuver);
+    renderCycleStage(); updateInfo();
+  }));
+  $$("[data-position]").forEach(b => b.addEventListener("click", () => {
+    $$("[data-position]").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    state.position = b.dataset.position;
+    audio.setPosition(state.position);
+    updateInfo();
+  }));
+  $$("[data-steth]").forEach(b => b.addEventListener("click", () => {
+    $$("[data-steth]").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    state.steth = b.dataset.steth;
+    audio.setSteth(state.steth);
+    updateInfo();
+  }));
+  $$(".spot").forEach(s => s.addEventListener("click", () => {
+    $$(".spot").forEach(x => x.classList.remove("active"));
+    const loc = s.dataset.loc;
+    $$(`.spot[data-loc="${loc}"]`).forEach(x => x.classList.add("active"));
+    state.location = loc;
+    audio.setLocation(loc);
+    updateInfo();
+  }));
+
+  // Examination hotspots on the patient diagram
+  $$(".exam-hotspot").forEach(h => h.addEventListener("click", () => {
+    examine(h.dataset.exam);
+  }));
+
+  els.playBtn.addEventListener("click", async () => {
+    await audio.init();
+    if (!audio.playing) {
+      audio.setCase(CASES[state.caseId]);
+      audio.setLocation(state.location);
+      audio.setManeuver(state.maneuver);
+      audio.setPosition(state.position);
+      audio.setSteth(state.steth);
+      audio.setVolume(parseInt(els.vol.value, 10) / 100);
+      audio.play();
+      els.playBtn.textContent = "■ Stop";
+      els.playBtn.classList.remove("primary");
+      els.playBtn.classList.add("active");
+    } else {
+      audio.stop();
+      els.playBtn.textContent = "▶ Start listening";
+      els.playBtn.classList.add("primary");
+      els.playBtn.classList.remove("active");
+    }
+  });
+  els.vol.addEventListener("input", e => {
+    audio.setVolume(parseInt(e.target.value, 10) / 100);
+  });
+
+  els.faceBtn.addEventListener("click", () => {
+    if (state.stage === "examine") showExaminerDiscussion();
+  });
+  els.feedbackOverlay.addEventListener("click", e => {
+    if (e.target === els.feedbackOverlay) els.feedbackOverlay.classList.remove("show");
+  });
+
+  setupCycleVisual();
+  document.addEventListener("click", () => audio.init(), { once: true });
+
+  setCase(0);
+  $$(`.spot[data-loc="aortic"]`).forEach(x => x.classList.add("active"));
+}
+
+function setCase(idx) {
+  state.caseIndex = idx; state.caseId = CASE_ORDER[idx];
+  state.stage = "examine";
+  state.d = blankDiscussion();
+  hideExaminerDiscussion();
+  const cfg = CASES[state.caseId];
+  els.caseNum.textContent = (idx + 1);
+  els.caseCount.textContent = `Case ${idx+1} of ${CASE_ORDER.length}`;
+  els.cycleInfo.textContent = `${cfg.bpm} BPM`;
+  document.body.classList.remove("locked");
+  if (audio.ctx) audio.setCase(cfg);
+  renderCycleStage();
+  updateInfo();
+  renderExamTray();
+  renderDiscussion();
+}
+
+/* ---------- Examination tray ------------------------------------ */
+function renderExamTray() {
+  // Reset all hotspots, then mark examined ones
+  $$(".exam-hotspot").forEach(h => h.classList.remove("examined"));
+  for (const key of state.d.examined) {
+    const h = document.querySelector(`.exam-hotspot[data-exam="${key}"]`);
+    if (h) h.classList.add("examined");
+  }
+  // Render finding cards below
+  els.examFindings.innerHTML = "";
+  if (state.d.examined.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "exam-empty";
+    empty.textContent = "No findings yet — tap a teal marker on the patient (R, C, BP, J, A, H, T, L, P).";
+    els.examFindings.appendChild(empty);
+  } else {
+    for (const key of state.d.examined) {
+      els.examFindings.appendChild(buildExamCard(key));
+    }
+  }
+}
+
+function buildExamCard(key) {
+  const cfg = CASES[state.caseId];
+  const f = cfg.examFindings?.[key];
+  const card = document.createElement("div");
+  card.className = "exam-card";
+  if (!f) {
+    card.innerHTML = `<h4>${key}</h4><p><i>No finding data</i></p>`;
+    return card;
+  }
+  if (f.abnormal)     card.classList.add("abnormal");
+  if (f.severityFlag) card.classList.add("severity");
+  card.innerHTML = `<h4>${f.label}</h4><p>${f.finding}</p>`;
+  return card;
+}
+
+function examine(key) {
+  if (state.stage !== "examine") return;        // locked once discussing
+  if (state.d.examined.includes(key)) return;   // no duplicates
+  state.d.examined.push(key);
+  const hotspot = document.querySelector(`.exam-hotspot[data-exam="${key}"]`);
+  if (hotspot) hotspot.classList.add("examined");
+  const empty = els.examFindings.querySelector(".exam-empty");
+  if (empty) empty.remove();
+  els.examFindings.appendChild(buildExamCard(key));
+}
+
+function nextCase() {
+  const next = (state.caseIndex + 1) % CASE_ORDER.length;
+  setCase(next);
+}
+
+function updateInfo() {
+  const locNames = {
+    aortic:    "Aortic area (2nd RICS)",
+    pulmonary: "Pulmonary area (2nd LICS)",
+    tricuspid: "LLSE / Tricuspid area",
+    apex:      "Apex / Mitral area",
+    carotid:   "Carotid",
+    axilla:    "Axilla"
+  };
+  els.locLabel.innerHTML = `<b>${locNames[state.location] || "—"}</b>`;
+  if (state.maneuver !== "none") {
+    els.manLabel.style.display = "";
+    const map = { inspire:"Inspiration", expire:"Expiration",
+      valsalva:"Valsalva", handgrip:"Handgrip", squat:"Squat" };
+    els.manLabel.textContent = map[state.maneuver] || state.maneuver;
+  } else {
+    els.manLabel.style.display = "none";
+  }
+  const g = audio.computeGain();
+  let label = g > 1.0 ? "Loud"
+            : g > 0.6 ? "Moderate"
+            : g > 0.3 ? "Soft"
+            : g > 0.1 ? "Very soft"
+            : "Barely audible";
+  els.murmurLoudness.textContent = `Loudness: ${label}`;
+}
+
+/* ---------- 4. CYCLE VISUALISATION ------------------------------- */
+/* Renders S1, murmur lines, S2, S1' bars onto a 100% wide stage.
+   The cursor sweeps; carotid pulse pill lights up in systole. */
+
+const SYS_FRAC = 0.36;        // fraction of cycle spent in systole
+
+function renderCycleStage() {
+  const stage = els.cycleStage;
+  if (!stage) return;
+  // Clear (but keep baseline element)
+  Array.from(stage.querySelectorAll(".bar, .bar-label, .murmur-line, .murmur-zone, .cursor, .systole-zone, .diastole-zone"))
+    .forEach(n => n.remove());
+
+  const cfg = CASES[state.caseId];
+
+  // S1 left
+  addBar(stage, 8, "s1", "S1");
+  // Systole label
+  addZone(stage, 8 + (SYS_FRAC*100 - 8)/2 + 5, "SYSTOLE", "systole-zone");
+  // Diastole label
+  addZone(stage, SYS_FRAC*100 + (100 - SYS_FRAC*100)/2 + 1, "DIASTOLE", "diastole-zone");
+
+  // S2 at systole end
+  const s2X = SYS_FRAC * 100 + 1;
+  addBar(stage, s2X, "s2", "S2");
+  // S1 again at right (for visual loop)
+  addBar(stage, 96, "s1", "S1");
+
+  // Optional S4 (HOCM): just before S1' (the right-hand S1)
+  if (cfg.s4) addBar(stage, 92, "s4");
+
+  // Optional opening snap (MS): right after S2
+  if (cfg.openingSnap) addBar(stage, s2X + 6, "snap");
+
+  // Murmur lines depending on case
+  drawMurmurLines(stage, cfg, s2X, state.maneuver);
+
+  // Cursor (created last so it sits on top)
+  const cursor = document.createElement("div");
+  cursor.className = "cursor";
+  cursor.id = "cycleCursor";
+  cursor.style.left = "0%";
+  stage.appendChild(cursor);
+}
+
+function addBar(stage, leftPct, cls, label) {
+  const bar = document.createElement("div");
+  bar.className = `bar ${cls}`;
+  bar.style.left = leftPct + "%";
+  // bar heights:
+  if (cls === "s1") bar.style.height = "78px";
+  else if (cls === "s2") bar.style.height = "82px";
+  else if (cls === "click") bar.style.height = "32px";
+  else if (cls === "snap")  bar.style.height = "28px";
+  else if (cls === "s4")    bar.style.height = "26px";
+  stage.appendChild(bar);
+
+  if (label) {
+    const lbl = document.createElement("div");
+    lbl.className = "bar-label";
+    lbl.style.left = leftPct + "%";
+    lbl.style.bottom = (24 + (cls === "s2" ? 86 : 82)) + "px";
+    lbl.textContent = label;
+    if (cls === "s2") lbl.style.color = "var(--pink)";
+    stage.appendChild(lbl);
+  }
+}
+
+function addZone(stage, leftPct, txt, cls) {
+  const el = document.createElement("div");
+  el.className = cls;
+  el.style.left = leftPct + "%";
+  el.textContent = txt;
+  stage.appendChild(el);
+}
+
+/* No murmur zone drawn — students tune in and identify the murmur themselves.
+   Only discrete extra sound markers (click for MVP) are shown. */
+function drawMurmurLines(stage, cfg, s2X, maneuver) {
+  const S1_L = 8;         // left % of first S1 bar
+  const S2_L = s2X;       // left % of S2 bar
+
+  // MVP: show the mid-systolic click position as a thin bar (it's a discrete sound event,
+  // not a murmur hint — its timing shifts with manoeuvres which is the key learning point)
+  if (cfg.murmurType === "mid-late-systolic-click") {
+    let clickAt = S1_L + (S2_L - S1_L) * 0.45;
+    if (maneuver === "valsalva")                              clickAt = S1_L + (S2_L - S1_L) * 0.27;
+    else if (maneuver === "handgrip" || maneuver === "squat") clickAt = S1_L + (S2_L - S1_L) * 0.62;
+    addBar(stage, clickAt, "click", "click");
+  }
+
+  // Keep cycle note as a fixed legend only — let students describe the murmur themselves
+  const noteEl = document.getElementById("cycleNote");
+  if (noteEl) {
+    noteEl.innerHTML = "Black bars = S1 &middot; Pink bar = S2 &middot; Carotid pulse flashes during systole";
+  }
+}
+
+/* Animate the cursor + carotid pulse */
+let cycleAnim = { cycleStart: 0 };
+function setupCycleVisual() {
+  audio.onBeat = (whenAudio) => { cycleAnim.cycleStart = whenAudio; };
+  function loop() {
+    requestAnimationFrame(loop);
+    if (!audio.ctx) return;
+    const now = audio.ctx.currentTime;
+    const cycleSec = 60 / (audio.bpm || 72);
+    let phase = ((now - cycleAnim.cycleStart) % cycleSec) / cycleSec;
+    if (!isFinite(phase) || phase < 0) phase = 0;
+    const cursor = document.getElementById("cycleCursor");
+    if (cursor) cursor.style.left = (phase * 100) + "%";
+    // Carotid pulse: bright in systole
+    const onSet = 0.06, onEnd = SYS_FRAC * 0.95;
+    if (audio.playing && phase >= onSet && phase <= onEnd) {
+      els.carotidLight.classList.add("on");
+    } else {
+      els.carotidLight.classList.remove("on");
+    }
+  }
+  loop();
+}
+
+/* ---------- 5. DISCUSSION FLOW (face the examiners) -------------- */
+
+function goToStage(s) {
+  state.stage = s;
+  // Lock the patient panels once we leave the "examine" stage
+  if (s === "examine") {
+    document.body.classList.remove("locked");
+  } else {
+    document.body.classList.add("locked");
+    // Stop audio — they can no longer re-examine
+    if (audio.playing) {
+      audio.stop();
+      els.playBtn.textContent = "▶ Start listening";
+      els.playBtn.classList.add("primary");
+      els.playBtn.classList.remove("active");
+    }
+  }
+  renderDiscussion();
+}
+
+function renderDiscussion() {
+  const flow = els.discussionFlow;
+  if (!flow) return;
+  const cfg = CASES[state.caseId];
+  const d = state.d;
+  const isExam = state.stage === "examine";
+
+  // Update header strip
+  els.rightTitle.textContent = isExam ? "Examination" : "Discussion with examiners";
+  els.rightTitle.classList.toggle("pink", true);
+  els.rightSub.textContent = isExam
+    ? "Examine the patient. When you're ready, face the examiners."
+    : "Patient is locked — talk through your findings.";
+  els.faceBtn.style.display = (isExam ? "" : "none");
+
+  flow.innerHTML = "";
+
+  // Always show the chain of done cards if we've progressed.
+  if (!isExam) {
+    if (d.diagnosis) flow.appendChild(makeDxCard(true));
+    else flow.appendChild(makeDxCard(false));
+  }
+
+  if (state.stage === "features" || stageAfter("features")) {
+    flow.appendChild(makeFeaturesForCard(state.stage !== "features"));
+  }
+  if (state.stage === "otherDx" || stageAfter("otherDx")) {
+    flow.appendChild(makeOtherDxCard(state.stage !== "otherDx"));
+  }
+  if (state.stage === "against" || stageAfter("against")) {
+    // Cards for already-completed against entries (done style)
+    const completedAgainst = Object.keys(d.againstByDx);
+    for (const dxId of completedAgainst) {
+      if (dxId === d.againstCurrent && state.stage === "against") continue;
+      flow.appendChild(makeAgainstDoneCard(dxId));
+    }
+    if (state.stage === "against" && d.againstCurrent) {
+      flow.appendChild(makeAgainstActiveCard(d.againstCurrent));
+    }
+  }
+  if (state.stage === "severity" || stageAfter("severity")) {
+    if (SEVERITY_FEATURES[cfg.id]) {
+      flow.appendChild(makeSeverityCard(state.stage !== "severity"));
+    }
+  }
+  if (state.stage === "summary") {
+    flow.appendChild(makeSummaryCard());
+  }
+}
+
+const STAGE_ORDER = ["examine","dx","features","otherDx","against","severity","summary"];
+function stageAfter(s) {
+  return STAGE_ORDER.indexOf(state.stage) > STAGE_ORDER.indexOf(s);
+}
+
+/* ---- Card builders ---- */
+
+function card(stageKey, qHtml, bodyHtml, opts = {}) {
+  const el = document.createElement("div");
+  const done = opts.done;
+  el.className = "stage-card " + (done ? "done" : "active");
+  const num = STAGE_ORDER.indexOf(stageKey);
+  el.innerHTML = `
+    <div class="q"><span class="num">${num}</span>${qHtml}</div>
+    <div class="a">${bodyHtml}</div>
+  `;
+  return el;
+}
+
+/* Stage 1: diagnosis — select ALL that apply */
+function makeDxCard(done) {
+  const d = state.d;
+  const cfg = CASES[state.caseId];
+  if (!done) {
+    const options = ALL_DX.map(x =>
+      `<label class="check"><input type="checkbox" value="${x.id}"/><span>${x.name}</span></label>`
+    ).join("");
+    const el = card("dx",
+      `What is your likely diagnosis? <span style="font-size:10px;font-weight:600;color:var(--muted)">Select all that apply</span>`,
+      `<div class="checks" style="max-height:210px">${options}</div>
+       <div class="stage-actions">
+         <button class="btn primary" id="dxConfirm">Confirm →</button>
+       </div>`
+    );
+    setTimeout(() => {
+      el.querySelector("#dxConfirm").addEventListener("click", () => {
+        const checked = Array.from(el.querySelectorAll("input:checked")).map(c => c.value);
+        if (checked.length === 0) { alert("Select at least one diagnosis."); return; }
+        d.diagnoses = checked;
+        d.diagnosisCorrect = checked.includes(cfg.id);
+        // Primary dx: correct one if included, otherwise first selected
+        d.diagnosis = d.diagnosisCorrect ? cfg.id : checked[0];
+        goToStage("features");
+      });
+    }, 0);
+    return el;
+  } else {
+    // Show all selected diagnoses with green/red chips
+    const chips = d.diagnoses.map(id => {
+      const isCorrect = (id === cfg.id);
+      return `<span class="chip ${isCorrect ? '' : 'wrong'}">${CASES[id]?.name || id}</span>`;
+    }).join(" ");
+    const verdict = d.diagnosisCorrect
+      ? `<span class="verdict-inline correct">✓ Correct diagnosis included</span>`
+      : `<span class="verdict-inline incorrect">Actual: ${cfg.name}</span>`;
+    return card("dx",
+      "Likely diagnosis",
+      `<div style="margin-bottom:4px">${chips}</div>${verdict}`,
+      { done: true });
+  }
+}
+
+/* Stage 2: supporting features — select all that apply */
+function makeFeaturesForCard(done) {
+  const d = state.d;
+  const expected = FEATURE_SUPPORT[d.diagnosis] || [];
+  if (!done) {
+    const options = FEATURES.map(f =>
+      `<label class="check"><input type="checkbox" value="${f.id}"/><span>${f.label}</span></label>`
+    ).join("");
+    const el = card("features",
+      `Key features supporting <b>${CASES[d.diagnosis].name}</b>? <span style="font-size:10px;font-weight:600;color:var(--muted)">Select all that apply</span>`,
+      `<div class="checks" style="max-height:200px">${options}</div>
+       <div class="stage-actions">
+         <button class="btn primary" id="featConfirm">Confirm →</button>
+       </div>`
+    );
+    setTimeout(() => {
+      el.querySelector("#featConfirm").addEventListener("click", () => {
+        const checked = Array.from(el.querySelectorAll("input:checked")).map(c => c.value);
+        if (checked.length === 0) { alert("Select at least one feature."); return; }
+        d.featuresFor = checked;
+        d.featureForCorrect = checked.some(id => expected.includes(id));
+        goToStage("otherDx");
+      });
+    }, 0);
+    return el;
+  } else {
+    // Chip per selected feature — green if correct, red if not
+    const chips = d.featuresFor.map(id => {
+      const ok = expected.includes(id);
+      return `<span class="chip ${ok?'':'wrong'}">${FEATURES_BY_ID[id] || id}</span>`;
+    }).join(" ");
+    // Other valid features they didn't mention
+    const missed = expected.filter(id => !d.featuresFor.includes(id) && FEATURES_BY_ID[id]);
+    const otherHtml = missed.length > 0
+      ? `<div style="margin-top:5px;font-size:11px;color:var(--muted);line-height:1.6">
+          Also valid: ${missed.slice(0, 4).map(id =>
+            `<span class="chip" style="font-size:10px;padding:2px 7px">${FEATURES_BY_ID[id]}</span>`
+          ).join(" ")}
+         </div>`
+      : "";
+    const verdict = d.featureForCorrect
+      ? `<span class="verdict-inline correct">✓</span>`
+      : `<span class="verdict-inline incorrect">✗</span>`;
+    return card("features", "Supporting features",
+      `<div style="margin-bottom:3px">${chips}</div>${verdict}${otherHtml}`,
+      { done: true });
+  }
+}
+
+/* Stage 3: other differentials considered */
+function makeOtherDxCard(done) {
+  const d = state.d;
+  if (!done) {
+    const caseTiming = CASES[state.caseId]?.timing || "systolic";
+    const options = ALL_DX
+      .filter(x => x.id !== d.diagnosis)
+      .filter(x => (CASES[x.id]?.timing || "systolic") === caseTiming)
+      .map(x => `<label class="check"><input type="checkbox" value="${x.id}"/><span>${x.name}</span></label>`)
+      .join("");
+    const el = card("otherDx",
+      "Other differentials to consider?",
+      `<div class="checks">${options}</div>
+       <div class="stage-actions">
+         <button class="btn primary" id="otherNext">Next →</button>
+         <button class="btn" id="otherSkip">None</button>
+       </div>`
+    );
+    setTimeout(() => {
+      const advance = (vals) => {
+        d.otherDx = vals;
+        d.againstByDx = {};
+        d.againstQueue = vals.slice();
+        d.againstCurrent = d.againstQueue.shift() || null;
+        if (d.againstCurrent) goToStage("against");
+        else maybeGoToSeverity();
+      };
+      el.querySelector("#otherNext").addEventListener("click", () => {
+        advance(Array.from(el.querySelectorAll("input:checked")).map(c => c.value));
+      });
+      el.querySelector("#otherSkip").addEventListener("click", () => advance([]));
+    }, 0);
+    return el;
+  } else {
+    return card("otherDx", "Other differentials",
+      d.otherDx.length
+        ? d.otherDx.map(x => `<span class="chip">${CASES[x].name}</span>`).join("")
+        : `<span class="chip">none</span>`,
+      { done: true });
+  }
+}
+
+/* Stage 4: for each other dx, ONE key feature against — picked from a dropdown */
+function makeAgainstActiveCard(dxId) {
+  const d = state.d;
+  const options = FEATURES.map(f =>
+    `<option value="${f.id}">${f.label}</option>`).join("");
+  const remaining = d.againstQueue.length;
+  const el = card("against",
+    `One key feature against <b>${CASES[dxId].name}</b>?
+     <span style="font-size:10px;font-weight:600;color:var(--muted);margin-left:4px">
+       ${remaining ? `${remaining} more` : "last"}
+     </span>`,
+    `<select id="agSelect"><option value="">— select —</option>${options}</select>
+     <div class="stage-actions">
+       <button class="btn primary" id="agNext">${remaining ? "Confirm & next →" : "Confirm →"}</button>
+     </div>`
+  );
+  setTimeout(() => {
+    el.querySelector("#agNext").addEventListener("click", () => {
+      const v = el.querySelector("#agSelect").value;
+      if (!v) { alert("Pick a feature."); return; }
+      d.againstByDx[dxId] = v;
+      // Valid = feature must BOTH argue against dxId AND actually be present in this case
+      const caseFeatures = FEATURE_SUPPORT[state.caseId] || [];
+      const expected = (AGAINST_FEATURES[dxId] || []).filter(f => caseFeatures.includes(f));
+      d.againstCorrectByDx[dxId] = expected.includes(v);
+      d.againstCurrent = d.againstQueue.shift() || null;
+      if (d.againstCurrent) goToStage("against");
+      else maybeGoToSeverity();
+    });
+  }, 0);
+  return el;
+}
+function makeAgainstDoneCard(dxId) {
+  const d = state.d;
+  const featureId = d.againstByDx[dxId];
+  const ok = d.againstCorrectByDx[dxId];
+  const verdict = ok
+    ? `<span class="verdict-inline correct">✓</span>`
+    : `<span class="verdict-inline incorrect">✗</span>`;
+
+  // Show other valid "against" answers — must also be features present in this case
+  const caseFeatures = FEATURE_SUPPORT[state.caseId] || [];
+  const allValid = (AGAINST_FEATURES[dxId] || []).filter(id => caseFeatures.includes(id));
+  const otherValid = allValid.filter(id => id !== featureId && FEATURES_BY_ID[id]);
+  const otherHtml = otherValid.length > 0
+    ? `<div style="margin-top:5px;font-size:11px;color:var(--muted);line-height:1.5">
+        Other valid answers: ${otherValid.slice(0, 4).map(id =>
+          `<span class="chip" style="font-size:10px;padding:2px 7px">${FEATURES_BY_ID[id]}</span>`
+        ).join(" ")}
+       </div>`
+    : "";
+
+  return card("against",
+    `Against ${CASES[dxId].name}`,
+    featureId
+      ? `<span class="chip ${ok?'':'wrong'}">${FEATURES_BY_ID[featureId]}</span> ${verdict}${otherHtml}`
+      : `<span class="chip wrong">no reasoning</span>${otherHtml}`,
+    { done: true });
+}
+
+function maybeGoToSeverity() {
+  const cfg = CASES[state.caseId];
+  if (cfg.severity) goToStage("severity");
+  else goToStage("summary");
+}
+
+/* Stage 5: severity — binary Mild-Moderate vs Severe */
+function makeSeverityCard(done) {
+  const d = state.d;
+  const cfg = CASES[state.caseId];
+  if (!cfg.severity) return document.createElement("div");
+  if (!done) {
+    const el = card("severity",
+      `Based on your examination — how severe?`,
+      `<div class="sev-buttons">
+         <button class="btn sev-btn" data-sev="mild-moderate">Mild–Moderate</button>
+         <button class="btn sev-btn" data-sev="severe">Severe</button>
+       </div>`
+    );
+    setTimeout(() => {
+      el.querySelectorAll(".sev-btn").forEach(b => b.addEventListener("click", () => {
+        d.severityChoice = b.dataset.sev;
+        d.severityCorrect = (b.dataset.sev === cfg.severity);
+        goToStage("summary");
+      }));
+    }, 0);
+    return el;
+  } else {
+    const ok = d.severityCorrect;
+    const verdict = ok
+      ? `<span class="verdict-inline correct">✓</span>`
+      : `<span class="verdict-inline incorrect">✗ (actual: ${cfg.severity})</span>`;
+    const label = d.severityChoice === "severe" ? "Severe" : "Mild–Moderate";
+    return card("severity", "Severity",
+      `<span class="chip ${ok?'':'wrong'}">${label}</span> ${verdict}`,
+      { done: true });
+  }
+}
+
+/* Stage 6: summary mind-map + teaching */
+function makeSummaryCard() {
+  const d = state.d;
+  const cfg = CASES[state.caseId];
+  const correct = d.diagnosisCorrect;
+  const featLabel = id => FEATURES_BY_ID[id] || id;
+  const tick = ok => ok
+    ? `<span class="verdict-inline correct">✓</span>`
+    : `<span class="verdict-inline incorrect">✗</span>`;
+
+  let html = "";
+  html += `<div style="margin-bottom:8px">
+    <span class="verdict-inline ${correct?'correct':'incorrect'}">
+      ${correct ? "✓ Diagnosis correct" : "✗ Actual: " + cfg.name}
+    </span>
+  </div>`;
+
+  // Mind map of their reasoning
+  const dxChips = (d.diagnoses && d.diagnoses.length ? d.diagnoses : [d.diagnosis]).map(id => {
+    const isCorrect = (id === cfg.id);
+    return `<span class="chip ${isCorrect ? '' : 'wrong'}">${CASES[id]?.name || id}</span>`;
+  }).join(" ");
+  html += `<div class="mindmap">
+    <div style="font-weight:800; font-size:14px; color:var(--black); margin-bottom:4px">
+      Your diagnosis: ${dxChips}
+    </div>
+
+    <div class="branch">
+      <h5>Supporting features</h5>
+      ${d.featuresFor && d.featuresFor.length
+        ? `<div>${d.featuresFor.map(id => {
+            const ok = (FEATURE_SUPPORT[d.diagnosis] || []).includes(id);
+            return `<span class="chip ${ok?'':'wrong'}">${featLabel(id)}</span>`;
+          }).join(" ")} ${tick(d.featureForCorrect)}</div>`
+        : `<i style="color:var(--muted)">None given</i>`}
+    </div>
+
+    <div class="branch">
+      <h5>Other differentials (${d.otherDx.length})</h5>
+      ${d.otherDx.length
+        ? d.otherDx.map(dxId => {
+            const f = d.againstByDx[dxId];
+            const ok = d.againstCorrectByDx[dxId];
+            return `<div style="margin:4px 0">
+              <b>${CASES[dxId].name}</b> — against:
+              <span class="chip ${ok?'':'wrong'}">${f ? featLabel(f) : 'none'}</span> ${tick(ok)}
+            </div>`;
+          }).join("")
+        : `<i style="color:var(--muted)">None considered</i>`}
+    </div>
+
+    ${examBranchHtml()}
+
+    ${cfg.severity ? `
+    <div class="branch pink">
+      <h5>Severity</h5>
+      <div>
+        Your call: <span class="chip ${d.severityCorrect?'':'wrong'}">
+          ${d.severityChoice === 'severe' ? 'Severe' : (d.severityChoice === 'mild-moderate' ? 'Mild–Moderate' : '—')}
+        </span> ${tick(d.severityCorrect)}
+        ${!d.severityCorrect && d.severityChoice
+          ? `<div style="font-size:12px;margin-top:4px;color:var(--muted)">Actual: ${cfg.severity === 'severe' ? 'Severe' : 'Mild–Moderate'}</div>`
+          : ''}
+      </div>
+    </div>` : ""}
+  </div>`;
+
+  // Teaching feedback
+  html += `<div class="teach-section" style="margin-top:14px">
+    <h4>Why ${cfg.name}?</h4>
+    <p style="font-size:13px;line-height:1.5;margin:0 0 6px">${cfg.teaching.summary}</p>
+    <ul style="font-size:12.5px;padding-left:18px;line-height:1.5">
+      ${cfg.teaching.hallmarks.map(h => `<li>${h}</li>`).join("")}
+    </ul>
+  </div>`;
+
+  html += `<div class="teach-section">
+    <h4>What argues against the alternatives</h4>
+    <ul style="font-size:12.5px;padding-left:18px;line-height:1.5">
+      ${cfg.teaching.against.map(h => `<li>${h}</li>`).join("")}
+    </ul>
+  </div>`;
+
+  html += `<div class="stage-actions" style="margin-top:14px">
+    <button class="btn primary" id="sumNext" style="flex:1">Next case →</button>
+    <button class="btn" id="sumRetry" style="flex:1">Re-examine this case</button>
+  </div>`;
+
+  const el = card("summary", "Summary", html);
+  setTimeout(() => {
+    el.querySelector("#sumNext").addEventListener("click", () => nextCase());
+    el.querySelector("#sumRetry").addEventListener("click", () => {
+      state.stage = "examine";
+      state.d = blankDiscussion();
+      document.body.classList.remove("locked");
+      renderDiscussion();
+    });
+  }, 0);
+  return el;
+}
+
+function examBranchHtml() {
+  const d = state.d;
+  const cfg = CASES[state.caseId];
+  if (!cfg.examFindings) return "";
+  const examined = d.examined;
+  const allKeys = EXAM_BUTTONS.map(b => b.key);
+  const notExamined = allKeys.filter(k => !examined.includes(k));
+  const missedSeverity = notExamined.filter(k => cfg.examFindings[k]?.severityFlag);
+
+  let inner = "";
+  if (examined.length) {
+    inner += `<ul>${examined.map(k => {
+      const f = cfg.examFindings[k] || {};
+      const flag = f.severityFlag
+        ? ` <b style="color:var(--pink)">— severity marker</b>`
+        : "";
+      return `<li><b>${f.label}:</b> ${f.finding}${flag}</li>`;
+    }).join("")}</ul>`;
+  } else {
+    inner += `<p style="color:var(--muted);margin:4px 0"><i>You didn't examine for any signs of severity.</i></p>`;
+  }
+  if (missedSeverity.length) {
+    inner += `<div style="margin-top:6px"><b style="color:var(--pink)">Severity signs you didn't examine for:</b>
+      <ul>${missedSeverity.map(k => {
+        const f = cfg.examFindings[k];
+        return `<li>${f.label}: ${f.finding}</li>`;
+      }).join("")}</ul></div>`;
+  }
+  return `<div class="branch">
+    <h5>Examination findings (${examined.length}/${allKeys.length})</h5>
+    ${inner}
+  </div>`;
+}
+
+/* =====================================================================
+   EXAMINER DISCUSSION SCREEN
+   Full-screen replacement for the 3-column layout once the student
+   faces the examiners. Two steps:
+     1. Pick top diagnosis + 2-3 supporting features
+     2. Differentials table — one case-feature per row arguing against each dx
+   ===================================================================== */
+
+function showExaminerDiscussion() {
+  state.stage = "dx";
+  document.body.classList.add("locked");
+  // Stop audio
+  if (audio.playing) {
+    audio.stop();
+    els.playBtn.textContent = "▶ Start listening";
+    els.playBtn.classList.add("primary");
+    els.playBtn.classList.remove("active");
+  }
+  // Hide instruction box when entering discussion mode
+  const ib = document.getElementById("instructBox");
+  if (ib) ib.style.display = "none";
+  // Swap screens
+  document.querySelector(".app").style.display = "none";
+  document.querySelector(".mascot").style.display = "none";
+  const screen = document.getElementById("examinerScreen");
+  screen.style.display = "flex";
+  document.getElementById("examCaseCount").textContent =
+    `Case ${state.caseIndex + 1} of ${CASE_ORDER.length}`;
+  renderExaminerDiscussion();
+}
+
+function hideExaminerDiscussion() {
+  const screen = document.getElementById("examinerScreen");
+  if (screen) screen.style.display = "none";
+  const app = document.querySelector(".app");
+  if (app) app.style.display = "";
+  const mascot = document.querySelector(".mascot");
+  if (mascot) mascot.style.display = "";
+  // Restore instruction box
+  const ib = document.getElementById("instructBox");
+  if (ib) ib.style.display = "";
+}
+
+function renderExaminerDiscussion() {
+  const body = document.getElementById("examScreenBody");
+  if (!body) return;
+  body.innerHTML = "";
+  const d = state.d;
+  const cfg = CASES[state.caseId];
+
+  // Auto-skip severity for HOCM / MVP (no severity data defined)
+  if (d.dxSubmitted && !d.severitySubmitted && !SEVERITY_FEATURES[cfg.id]) {
+    d.severitySubmitted = true;
+  }
+
+  if (!d.dxSubmitted) {
+    body.appendChild(buildDxFeaturesCard());
+  } else {
+    body.appendChild(buildDxFeaturesCardDone());
+    if (!d.severitySubmitted) {
+      body.appendChild(buildSeverityCard());
+    } else {
+      if (d.severityCorrect !== null) {
+        body.appendChild(buildSeverityCardDone());
+      }
+      if (!d.diffsSubmitted) {
+        body.appendChild(buildDifferentialsTable());
+      } else {
+        body.appendChild(buildDifferentialsTableDone());
+        body.appendChild(buildExamTeachCard());
+      }
+    }
+  }
+}
+
+/* ---- Step 1: Diagnosis picker + supporting features ---- */
+function buildDxFeaturesCard() {
+  const cfg = CASES[state.caseId];
+  const caseTiming = cfg.timing;
+
+  // Diagnoses filtered to same timing
+  const dxOptions = ALL_DX.filter(x =>
+    (CASES[x.id]?.timing || "systolic") === caseTiming
+  );
+
+  const radioItems = dxOptions.map(x =>
+    `<label><input type="radio" name="topDx" value="${x.id}"/>
+     <span>${x.name}</span></label>`
+  ).join("");
+
+  const featItems = FEATURES.map(f =>
+    `<label data-fid="${f.id}">
+       <input type="checkbox" name="topFeature" value="${f.id}"/>
+       <span>${f.label}</span>
+     </label>`
+  ).join("");
+
+  const el = document.createElement("div");
+  el.className = "exam-block";
+  el.innerHTML = `
+    <div class="exam-block-title">
+      <span class="sn">1</span>
+      What is your most likely diagnosis?
+    </div>
+    <div class="dx-radio-grid" id="dxRadioGrid">${radioItems}</div>
+
+    <div class="exam-block-title" style="margin-top:18px">
+      <span class="sn">2</span>
+      Select 2–3 features that support your diagnosis
+    </div>
+    <p class="feat-subhead">Pick up to 3 features — selection locks after 3.</p>
+    <div class="feat-grid" id="featGrid">${featItems}</div>
+
+    <button class="btn primary" id="dxFeatConfirm" style="max-width:220px">
+      Confirm →
+    </button>
+  `;
+
+  setTimeout(() => {
+    // Radio — highlight picked label
+    el.querySelectorAll('input[name="topDx"]').forEach(r =>
+      r.addEventListener("change", () => {
+        el.querySelectorAll(".dx-radio-grid label").forEach(l => l.classList.remove("picked"));
+        r.closest("label").classList.add("picked");
+      })
+    );
+
+    // Checkboxes — enforce max 3, highlight
+    el.querySelectorAll('input[name="topFeature"]').forEach(cb =>
+      cb.addEventListener("change", () => {
+        const all = Array.from(el.querySelectorAll('input[name="topFeature"]'));
+        const checked = all.filter(c => c.checked);
+        all.forEach(c => {
+          const lbl = c.closest("label");
+          lbl.classList.toggle("picked", c.checked);
+          if (!c.checked) {
+            c.disabled = checked.length >= 3;
+            lbl.classList.toggle("greyed", checked.length >= 3);
+          }
+        });
+      })
+    );
+
+    // Confirm
+    el.querySelector("#dxFeatConfirm").addEventListener("click", () => {
+      const dx = el.querySelector('input[name="topDx"]:checked')?.value;
+      const feats = Array.from(
+        el.querySelectorAll('input[name="topFeature"]:checked')
+      ).map(c => c.value);
+      if (!dx) { alert("Please select a diagnosis."); return; }
+      if (feats.length === 0) { alert("Please select at least one supporting feature."); return; }
+
+      const d = state.d;
+      d.topDx = dx;
+      d.dxCorrect = (dx === cfg.id);
+      d.topFeatures = feats;
+      const correctFeats = FEATURE_SUPPORT[cfg.id] || [];
+      d.topFeaturesCorrect = feats.filter(f => correctFeats.includes(f));
+      d.topFeaturesMissed = correctFeats.filter(f => !feats.includes(f));
+      d.dxSubmitted = true;
+      renderExaminerDiscussion();
+    });
+  }, 0);
+
+  return el;
+}
+
+/* ---- Step 1 done (collapsed summary) ---- */
+function buildDxFeaturesCardDone() {
+  const cfg = CASES[state.caseId];
+  const d = state.d;
+
+  const dxName = CASES[d.topDx]?.name || d.topDx;
+  const dxOk = d.dxCorrect;
+  const correctFeats = FEATURE_SUPPORT[cfg.id] || [];
+
+  const featChips = d.topFeatures.map(f => {
+    const ok = correctFeats.includes(f);
+    return `<span class="r-chip ${ok ? "ok" : "bad"}">${FEATURES_BY_ID[f] || f}</span>`;
+  }).join("");
+
+  const missed = (d.topFeaturesMissed || []).slice(0, 4);
+  const missedHtml = missed.length
+    ? `<p class="r-note">Other valid supporting features:</p>
+       <div class="r-chips">${missed.map(f =>
+         `<span class="r-chip hint">${FEATURES_BY_ID[f] || f}</span>`
+       ).join("")}</div>`
+    : "";
+
+  const el = document.createElement("div");
+  el.className = "exam-block done";
+  el.innerHTML = `
+    <div class="exam-block-title">
+      <span class="sn">✓</span>
+      Diagnosis &amp; supporting features
+    </div>
+    <div class="r-chips">
+      <span class="r-chip ${dxOk ? "ok" : "bad"}">${dxName}</span>
+      ${dxOk
+        ? `<span class="r-chip ok">✓ Correct</span>`
+        : `<span class="r-chip bad">✗ Actual: ${cfg.name}</span>`}
+    </div>
+    <p class="r-note">Your supporting features:</p>
+    <div class="r-chips">${featChips}</div>
+    ${missedHtml}
+  `;
+  return el;
+}
+
+/* ---- Step 2: Severity assessment ---- */
+function buildSeverityCard() {
+  const cfg = CASES[state.caseId];
+  const el = document.createElement("div");
+  el.className = "exam-block";
+  el.innerHTML = `
+    <div class="exam-block-title">
+      <span class="sn">2</span>
+      Severity
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 16px">
+      Based on the examination findings — is this case <strong>severe</strong> or <strong>mild to moderate</strong> disease?
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn sev-choice" data-val="severe" style="flex:1;min-width:130px">Severe</button>
+      <button class="btn sev-choice" data-val="mild" style="flex:1;min-width:130px">Mild to moderate</button>
+    </div>
+  `;
+  setTimeout(() => {
+    el.querySelectorAll(".sev-choice").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const d = state.d;
+        d.severityChoice = btn.dataset.val;
+        d.severityCorrect = (cfg.severity === "severe") === (btn.dataset.val === "severe");
+        d.severitySubmitted = true;
+        renderExaminerDiscussion();
+      });
+    });
+  }, 0);
+  return el;
+}
+
+/* ---- Step 2 done (collapsed severity result) ---- */
+function buildSeverityCardDone() {
+  const cfg = CASES[state.caseId];
+  const d = state.d;
+  const sf = SEVERITY_FEATURES[cfg.id];
+  const ok = d.severityCorrect;
+  const choiceLabel = d.severityChoice === "severe" ? "Severe" : "Mild to moderate";
+  const correctLabel = cfg.severity === "severe" ? "severe" : "mild to moderate";
+
+  const presentItems  = sf ? sf.items.filter(x => x.correct && x.presentInCase && !x.advanced) : [];
+  const absentItems   = sf ? sf.items.filter(x => x.correct && !x.presentInCase && !x.advanced) : [];
+  const advancedItems = sf ? sf.items.filter(x => x.correct && x.advanced) : [];
+  const conditionName = sf ? sf.name.replace(/^Severe /i, "") : cfg.name;
+
+  const markersHtml = sf
+    ? `<p style="font-size:12px;font-weight:800;color:var(--black);margin:10px 0 4px">
+         Markers of severity for ${conditionName}:
+       </p>
+       ${presentItems.length ? `
+         <ul style="font-size:12px;line-height:1.65;padding-left:18px;margin:0 0 6px">
+           ${presentItems.map(x => `<li><strong>${x.label}</strong></li>`).join("")}
+         </ul>` : ""}
+       ${absentItems.length ? `
+         <p style="font-size:11px;color:var(--muted);font-weight:700;margin:6px 0 3px">
+           Other markers of severity for ${conditionName} (not present in this case):
+         </p>
+         <ul style="font-size:11.5px;line-height:1.6;padding-left:18px;margin:0;color:var(--muted)">
+           ${absentItems.map(x => `<li>${x.label}</li>`).join("")}
+         </ul>` : ""}
+       ${advancedItems.length ? `
+         <p style="font-size:11px;color:var(--muted);font-weight:700;margin:10px 0 3px">
+           Advanced: other eponymous signs of severe ${conditionName}:
+         </p>
+         <ul style="font-size:11.5px;line-height:1.6;padding-left:18px;margin:0;color:var(--muted)">
+           ${advancedItems.map(x => `<li>${x.label}</li>`).join("")}
+         </ul>` : ""}`
+    : "";
+
+  const el = document.createElement("div");
+  el.className = "exam-block done";
+  el.innerHTML = `
+    <div class="exam-block-title">
+      <span class="sn" style="background:${ok ? "var(--teal)" : "#c0392b"}">${ok ? "✓" : "✗"}</span>
+      Severity — ${ok ? "Correct" : "Not quite"}
+    </div>
+    <p style="font-size:13px;margin:0 0 4px">
+      You said: <strong>${choiceLabel}</strong>.
+      This is <strong>${correctLabel} ${cfg.name}</strong>.
+    </p>
+    ${markersHtml}
+  `;
+  return el;
+}
+
+/* ---- Step 3: Differentials table ---- */
+function buildDifferentialsTable() {
+  const cfg = CASES[state.caseId];
+  const d = state.d;
+  const caseTiming = cfg.timing;
+
+  // All same-timing dxs except the student's top pick
+  const diffs = ALL_DX.filter(x =>
+    x.id !== d.topDx &&
+    (CASES[x.id]?.timing || "systolic") === caseTiming
+  );
+  // Store order for results rendering
+  d.againstQueue = diffs.map(x => x.id);
+
+  // Build dropdown options from THIS CASE's features only
+  const caseFeatureIds = FEATURE_SUPPORT[cfg.id] || [];
+  const caseOpts = caseFeatureIds
+    .filter(id => FEATURES_BY_ID[id])
+    .map(id => `<option value="${id}">${FEATURES_BY_ID[id]}</option>`)
+    .join("");
+
+  const rows = diffs.map(x => `
+    <tr data-dxid="${x.id}">
+      <td>${x.name}</td>
+      <td>
+        <select class="diff-sel" data-dxid="${x.id}">
+          <option value="">— select —</option>
+          ${caseOpts}
+        </select>
+      </td>
+    </tr>
+  `).join("");
+
+  const el = document.createElement("div");
+  el.className = "exam-block";
+  el.innerHTML = `
+    <div class="exam-block-title">
+      <span class="sn">3</span>
+      What feature of the murmur and/or manoeuvres argues against each differential?
+    </div>
+    <p class="feat-subhead" style="margin-bottom:12px">
+      Pick one feature per row — something you might mention to the examiners.
+      The dropdown shows only features found in <em>this</em> patient's examination.
+    </p>
+    <div class="diff-wrap">
+      <table class="diff-tbl" id="diffTable">
+        <thead>
+          <tr>
+            <th>Differential diagnosis</th>
+            <th>Feature from this case that goes against it</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn primary" id="diffSubmit" style="max-width:220px">
+        Submit answers →
+      </button>
+    </div>
+  `;
+
+  setTimeout(() => {
+    el.querySelector("#diffSubmit").addEventListener("click", () => {
+      const sels = el.querySelectorAll(".diff-sel");
+      let allFilled = true;
+      sels.forEach(s => { if (!s.value) allFilled = false; });
+      if (!allFilled) {
+        alert("Please select a feature for every differential.");
+        return;
+      }
+      d.againstByDx = {};
+      d.againstCorrectByDx = {};
+      const caseFeatIds = FEATURE_SUPPORT[cfg.id] || [];
+      sels.forEach(s => {
+        const dxId = s.dataset.dxid;
+        const fId = s.value;
+        d.againstByDx[dxId] = fId;
+        const valid = (AGAINST_FEATURES[dxId] || []).filter(f => caseFeatIds.includes(f));
+        d.againstCorrectByDx[dxId] = valid.includes(fId);
+      });
+      d.diffsSubmitted = true;
+      renderExaminerDiscussion();
+    });
+  }, 0);
+
+  return el;
+}
+
+/* ---- Step 2 done (results table) ---- */
+function buildDifferentialsTableDone() {
+  const cfg = CASES[state.caseId];
+  const d = state.d;
+  const caseFeatIds = FEATURE_SUPPORT[cfg.id] || [];
+
+  const rows = (d.againstQueue || []).map(dxId => {
+    const fId = d.againstByDx[dxId];
+    const ok = d.againstCorrectByDx[dxId];
+    const valid = (AGAINST_FEATURES[dxId] || []).filter(f => caseFeatIds.includes(f));
+    const others = valid.filter(id => id !== fId && FEATURES_BY_ID[id]).slice(0, 3);
+    const othersHtml = others.length
+      ? `<p class="r-note">Other valid answers:</p>
+         <div class="r-chips">${others.map(id =>
+           `<span class="r-chip hint">${FEATURES_BY_ID[id]}</span>`
+         ).join("")}</div>`
+      : "";
+    return `
+      <tr>
+        <td>${CASES[dxId]?.name || dxId}</td>
+        <td>
+          <div class="diff-result">
+            <span class="r-chip ${ok ? "ok" : "bad"}">
+              ${ok ? "✓" : "✗"} ${FEATURES_BY_ID[fId] || fId}
+            </span>
+            ${othersHtml}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  const el = document.createElement("div");
+  el.className = "exam-block done";
+  el.innerHTML = `
+    <div class="exam-block-title">
+      <span class="sn">✓</span>
+      Differentials — results
+    </div>
+    <div class="diff-wrap">
+      <table class="diff-tbl">
+        <thead>
+          <tr>
+            <th>Differential</th>
+            <th>Feature against it &amp; other valid answers</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+  return el;
+}
+
+/* ---- Teaching point + Next case ---- */
+function buildExamTeachCard() {
+  const cfg = CASES[state.caseId];
+  const d = state.d;
+
+  const hallmarksHtml = cfg.teaching.hallmarks
+    .map(h => `<li>${h}</li>`).join("");
+
+  const el = document.createElement("div");
+  el.className = "exam-block teach";
+  el.innerHTML = `
+    <div class="exam-block-title">
+      <span class="sn" style="background:var(--teal)">✓</span>
+      Teaching point — ${cfg.name}
+    </div>
+    <p style="font-size:13px;line-height:1.55;margin:0 0 8px;color:var(--text)">
+      ${cfg.teaching.summary}
+    </p>
+    <ul style="font-size:13px;line-height:1.65;padding-left:20px;margin:0 0 20px">
+      ${hallmarksHtml}
+    </ul>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn primary" id="examNext" style="flex:1;min-width:160px">
+        Next case →
+      </button>
+      <button class="btn" id="examRetry" style="flex:1;min-width:160px">
+        Re-examine this case
+      </button>
+    </div>
+  `;
+
+  // Determine whether this is the last case
+  const isLastCase = state.caseIndex === CASE_ORDER.length - 1;
+
+  setTimeout(() => {
+    if (isLastCase) {
+      el.querySelector("#examNext").addEventListener("click", () => showCelebration());
+    } else {
+      el.querySelector("#examNext").addEventListener("click", () => {
+        setCase(state.caseIndex + 1);
+      });
+    }
+    el.querySelector("#examRetry").addEventListener("click", () => {
+      hideExaminerDiscussion();
+      state.stage = "examine";
+      state.d = blankDiscussion();
+      document.body.classList.remove("locked");
+      renderDiscussion();
+    });
+  }, 0);
+
+  // Update button label on last case
+  if (isLastCase) {
+    el.querySelector("#examNext").textContent = "Finish 🎉";
+  }
+
+  return el;
+}
+
+/* ---- End-of-game celebration ---- */
+function showCelebration() {
+  const screen = document.getElementById("examinerScreen");
+  const body   = document.getElementById("examScreenBody");
+  if (!body) return;
+  body.innerHTML = "";
+
+  const el = document.createElement("div");
+  el.className = "exam-block teach";
+  el.style.cssText = "text-align:center;padding:40px 24px;";
+  el.innerHTML = `
+    <div style="font-size:52px;margin-bottom:12px">🎉</div>
+    <div style="font-size:22px;font-weight:800;color:var(--teal-dark);margin-bottom:8px">
+      All 6 cases complete!
+    </div>
+    <p style="font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 20px">
+      Well done — you've mastered the core 6 cases in the Cardiac Confidence Lab.
+      Now go forth and find these conditions on the ward! You got this doctor humans!
+    </p>
+    <div style="font-size:28px;margin-bottom:24px">🫀</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <button class="btn primary" id="celebRestart" style="min-width:180px">
+        Start again from Case 1
+      </button>
+      <button class="btn" id="celebClose" style="min-width:180px">
+        Back to examine
+      </button>
+    </div>
+  `;
+
+  body.appendChild(el);
+
+  // Update the header case count so it doesn't look stale
+  const caseCount = document.getElementById("examCaseCount");
+  if (caseCount) caseCount.textContent = `All ${CASE_ORDER.length} cases done`;
+
+  el.querySelector("#celebRestart").addEventListener("click", () => setCase(0));
+  el.querySelector("#celebClose").addEventListener("click", () => {
+    hideExaminerDiscussion();
+    state.stage = "examine";
+    state.d = blankDiscussion();
+    document.body.classList.remove("locked");
+    renderDiscussion();
+  });
+}
+
+/* Util */
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+window.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
