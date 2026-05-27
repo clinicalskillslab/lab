@@ -1192,10 +1192,37 @@
 
   /* ---- Touch / iPad improvements ---- */
   .btn, .spot, .exam-hotspot, .sev-choice, .feat-check, .dx-radio label {
-    touch-action: manipulation; /* removes 300ms tap delay on Safari */
+    touch-action: manipulation; /* removes 300ms tap delay on Safari/Chrome */
   }
-  /* Larger hit areas on touch-only devices (iPad, iPhone) */
+
+  /*
+   * Touch-device layout — uses (hover:none)+(pointer:coarse) rather than
+   * a width breakpoint so it fires on ALL iPads/iPhones regardless of
+   * whether Chrome/Safari is in desktop mode or what viewport width is reported.
+   */
   @media (hover: none) and (pointer: coarse) {
+    /* Force single-column regardless of reported viewport */
+    .app { grid-template-columns: 1fr !important; }
+    .mascot { display: none !important; }
+
+    /* Patient figure panel first, controls second, discussion third */
+    .panel.stage.center-locked { order: 1; }
+    .panel.left-locked          { order: 2; }
+    #rightPanel                 { order: 3; }
+
+    /* Within the centre panel: SVG above findings */
+    .patient-area { flex-direction: column; }
+    .chest-wrap {
+      order: -1;        /* pull SVG before findings-column visually */
+      flex: none;       /* don't let flexbox collapse it to 0 */
+      min-height: 340px;
+    }
+    .findings-column { flex: 0 0 auto; max-height: 200px; }
+
+    /* SVG: explicit size so browsers with no implicit viewBox sizing still render */
+    svg.chest { width: 100%; height: auto; max-height: 420px; }
+
+    /* Larger tap targets */
     .spot circle { r: 16; }
     .spot.active circle { r: 16; }
     .exam-hotspot circle { r: 14; }
@@ -1203,7 +1230,8 @@
     .instruct-box ul li { margin-bottom: 8px; }
     .top-instructions { padding-bottom: 4px; }
   }
-  /* Tablet portrait — tighten up the instruction strip */
+
+  /* Tablet portrait — tighten instruction strip */
   @media (max-width: 768px) {
     .top-instructions { padding: 8px 12px 0; }
     .instruct-box { font-size: 13px; }
@@ -1283,7 +1311,7 @@
       <div class="exam-findings" id="examFindings"></div>
     </div>
     <div class="chest-wrap">
-      <svg class="chest" viewBox="0 0 520 620" xmlns="http://www.w3.org/2000/svg">
+      <svg class="chest" viewBox="0 0 520 620" width="520" height="620" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <!-- A slightly lit skin tone -->
           <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
