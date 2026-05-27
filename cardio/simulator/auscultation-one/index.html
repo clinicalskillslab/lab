@@ -270,10 +270,23 @@
     border: 2px solid var(--cream-deep);
   }
   @media (max-width: 1280px) {
-    .patient-area { flex-direction: column; }
+    /* SVG first (it's second in the DOM), findings below */
+    .patient-area { flex-direction: column-reverse; }
     .findings-column { flex: 0 0 auto; max-height: 220px; }
+    /* Ensure the SVG container always has a minimum presence */
+    .chest-wrap { min-height: 260px; }
   }
-  svg.chest { max-width: 100%; height: auto; display: block; }
+  svg.chest {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    /* aspect-ratio ensures height is computed correctly on mobile even without explicit height attr */
+    aspect-ratio: 520 / 620;
+  }
+  /* On mobile, cap the SVG so it doesn't overflow the screen vertically */
+  @media (max-width: 1280px) {
+    svg.chest { width: auto; max-width: 100%; max-height: 420px; }
+  }
 
   /* Auscultation spots — white circles with gray outlines like the handout */
   .spot {
@@ -949,6 +962,10 @@
   @media (max-width: 1280px) {
     .app { grid-template-columns: 1fr; }
     .mascot { display: none; }
+    /* Patient figure panel first, then audio/controls, then discussion */
+    .panel.stage.center-locked { order: 1; }
+    .panel.left-locked          { order: 2; }
+    #rightPanel                 { order: 3; }
   }
 
   /* ============== EXAMINER DISCUSSION SCREEN ============== */
