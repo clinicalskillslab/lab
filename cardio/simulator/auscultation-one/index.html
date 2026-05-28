@@ -269,23 +269,22 @@
     justify-content: center;
     border: 2px solid var(--cream-deep);
   }
-  @media (max-width: 1280px) {
-    /* SVG first (it's second in the DOM), findings below */
-    .patient-area { flex-direction: column-reverse; }
-    .findings-column { flex: 0 0 auto; max-height: 220px; }
-    /* Ensure the SVG container always has a minimum presence */
-    .chest-wrap { min-height: 260px; }
+  /* Below 1100px (iPad portrait, phones): stack patient-area vertically,
+     SVG on top via order:-1, findings below */
+  @media (max-width: 1100px) {
+    .patient-area { flex-direction: column; }
+    .chest-wrap { order: -1; flex: none; min-height: 260px; }
+    .findings-column { order: 1; flex: 0 0 auto; max-height: 220px; }
   }
   svg.chest {
     max-width: 100%;
+    width: 100%;
     height: auto;
     display: block;
-    /* aspect-ratio ensures height is computed correctly on mobile even without explicit height attr */
-    aspect-ratio: 520 / 620;
+    aspect-ratio: 520 / 620; /* ensures height always computed from width */
   }
-  /* On mobile, cap the SVG so it doesn't overflow the screen vertically */
-  @media (max-width: 1280px) {
-    svg.chest { width: auto; max-width: 100%; max-height: 420px; }
+  @media (max-width: 1100px) {
+    svg.chest { max-height: 480px; } /* stop it being taller than viewport */
   }
 
   /* Auscultation spots — white circles with gray outlines like the handout */
@@ -959,10 +958,10 @@
     to   { opacity: 1; transform: rotateX(0) translateY(0); }
   }
 
-  @media (max-width: 1280px) {
+  /* Below 1100px: single column. Patient figure first, controls second, discussion third. */
+  @media (max-width: 1100px) {
     .app { grid-template-columns: 1fr; }
     .mascot { display: none; }
-    /* Patient figure panel first, then audio/controls, then discussion */
     .panel.stage.center-locked { order: 1; }
     .panel.left-locked          { order: 2; }
     #rightPanel                 { order: 3; }
@@ -1195,34 +1194,9 @@
     touch-action: manipulation; /* removes 300ms tap delay on Safari/Chrome */
   }
 
-  /*
-   * Touch-device layout — uses (hover:none)+(pointer:coarse) rather than
-   * a width breakpoint so it fires on ALL iPads/iPhones regardless of
-   * whether Chrome/Safari is in desktop mode or what viewport width is reported.
-   */
+  /* Touch devices: larger tap targets only — layout is handled by the
+     width breakpoints above so iPad landscape keeps its 3-column view. */
   @media (hover: none) and (pointer: coarse) {
-    /* Force single-column regardless of reported viewport */
-    .app { grid-template-columns: 1fr !important; }
-    .mascot { display: none !important; }
-
-    /* Patient figure panel first, controls second, discussion third */
-    .panel.stage.center-locked { order: 1; }
-    .panel.left-locked          { order: 2; }
-    #rightPanel                 { order: 3; }
-
-    /* Within the centre panel: SVG above findings */
-    .patient-area { flex-direction: column; }
-    .chest-wrap {
-      order: -1;        /* pull SVG before findings-column visually */
-      flex: none;       /* don't let flexbox collapse it to 0 */
-      min-height: 340px;
-    }
-    .findings-column { flex: 0 0 auto; max-height: 200px; }
-
-    /* SVG: explicit size so browsers with no implicit viewBox sizing still render */
-    svg.chest { width: 100%; height: auto; max-height: 420px; }
-
-    /* Larger tap targets */
     .spot circle { r: 16; }
     .spot.active circle { r: 16; }
     .exam-hotspot circle { r: 14; }
