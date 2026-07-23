@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neuro Confidence Lab</title>
+<style>
+/* ── RESET & VARIABLES ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --teal:        #0D9488;
+  --teal-l:      #14b8a6;
+  --teal-pale:   #f0fdfa;
+  --teal-border: #99f6e4;
+  --blk:         #111111;
+  --white:       #ffffff;
+  --grey:        #f5f5f5;
+  --grey-mid:    #e5e7eb;
+  --amber:       #d97706;
+  --red:         #dc2626;
+  --green:       #16a34a;
+  --green-pale:  #f0fdf4;
+  --red-pale:    #fef2f2;
+}
+html, body { height: 100%; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--white);
+  color: var(--blk);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+#game-header {
+  background: var(--white);
+  border-bottom: 2px solid var(--teal);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(13,148,136,0.1);
+  flex-shrink: 0;
+}
+.logo-area { display: flex; align-items: center; gap: 10px; }
+.logo-mark {
+  width: 38px; height: 38px;
+  background: var(--teal); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 20px; font-weight: 800;
+  flex-shrink: 0;
+}
+.logo-name {
+  font-size: 13px; font-weight: 700; color: var(--teal);
+  letter-spacing: 0.8px; text-transform: uppercase; display: block; line-height: 1.2;
+}
+.logo-case { font-size: 11px; color: #888; font-style: italic; display: block; }
+
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+#home-btn {
+  display: none;
+  background: none; border: 1.5px solid var(--grey-mid);
+  border-radius: 6px; padding: 5px 12px;
+  font-size: 12px; font-weight: 600; color: #666;
+  cursor: pointer; transition: all 0.2s;
+}
+#home-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+#timer {
+  font-size: 22px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--teal); letter-spacing: 3px;
+  padding: 6px 16px;
+  border: 2.5px solid var(--teal); border-radius: 8px;
+  min-width: 94px; text-align: center;
+  transition: color 0.5s, border-color 0.5s;
+  display: none;
+}
+#timer.amber  { color: var(--amber); border-color: var(--amber); }
+#timer.danger { color: var(--red); border-color: var(--red); animation: pulse-red 1s ease-in-out infinite; }
+@keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── PROGRESS BAR ── */
+#progress-bar {
+  display: none;
+  padding: 10px 24px 6px;
+  background: var(--grey);
+  border-bottom: 1px solid var(--grey-mid);
+  flex-shrink: 0;
+}
+.progress-track {
+  display: flex; align-items: flex-start;
+  max-width: 760px; margin: 0 auto;
+}
+.prog-step {
+  display: flex; flex-direction: column; align-items: center;
+  flex: 1; position: relative;
+}
+.prog-step::before {
+  content: ''; position: absolute;
+  top: 15px; left: calc(-50% + 15px); right: calc(50% + 15px);
+  height: 2px; background: var(--grey-mid); z-index: 0;
+}
+.prog-step:first-child::before { display: none; }
+.prog-step.done::before { background: var(--teal); }
+.prog-dot {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 2.5px solid var(--grey-mid); background: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; z-index: 1; position: relative;
+  transition: all 0.35s;
+}
+.prog-step.active .prog-dot { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(13,148,136,0.18); }
+.prog-step.done .prog-dot  { background: var(--teal); border-color: var(--teal); color: white; }
+.prog-label {
+  font-size: 10px; color: #aaa; margin-top: 4px;
+  text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; text-align: center;
+}
+.prog-step.active .prog-label,
+.prog-step.done .prog-label { color: var(--teal); }
+
+/* ── CONTENT AREA (fills viewport below header) ── */
+#content-area {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── SCREENS / STAGES ── */
+.screen, .stage {
+  display: none;
+  flex: 1;
+  padding: 32px 24px 60px;
+  max-width: 940px;
+  margin: 0 auto;
+  width: 100%;
+}
+.screen.active, .stage.active {
+  display: block;
+  animation: fade-in 0.3s ease;
+}
+@keyframes fade-in { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+
+/* ── STAGE HEADER ── */
+.stage-header { text-align: center; margin-bottom: 28px; }
+.stage-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--teal-pale); color: var(--teal);
+  border: 1px solid var(--teal-border); border-radius: 99px;
+  padding: 4px 14px; font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;
+}
+.stage-title { font-size: 26px; font-weight: 700; color: var(--blk); margin-bottom: 8px; line-height: 1.3; }
+.stage-intro { font-size: 15px; color: #555; max-width: 640px; margin: 0 auto; line-height: 1.65; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 28px; border-radius: 8px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  border: none; transition: all 0.2s;
+}
+.btn-primary { background: var(--teal); color: white; }
+.btn-primary:hover:not(:disabled) { background: #0f766e; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(13,148,136,0.35); }
+.btn-primary:disabled { background: var(--grey-mid); color: #aaa; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+.btn-dark { background: var(--blk); color: white; }
+.btn-dark:hover { background: #333; }
+.btn-outline { background: white; color: var(--teal); border: 2px solid var(--teal); }
+.btn-outline:hover:not(:disabled) { background: var(--teal-pale); }
+.btn-outline:disabled { color: #aaa; border-color: #aaa; cursor: not-allowed; }
+.btn-row { display: flex; justify-content: center; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+
+/* ── IMAGE PLACEHOLDER ── */
+.img-placeholder {
+  background: var(--grey); border: 2px dashed var(--teal-border); border-radius: 10px;
+  display: inline-flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: var(--teal); font-size: 12px; text-align: center;
+  padding: 20px; gap: 6px; vertical-align: top;
+}
+.img-placeholder .ph-icon { font-size: 36px; }
+.img-placeholder .ph-name { font-weight: 600; }
+.img-placeholder .ph-file { font-size: 11px; color: #aaa; }
+
+/* ══════════════════════════════
+   HOME SCREEN
+══════════════════════════════ */
+#screen-home {
+  padding-top: 48px;
+}
+.home-hero {
+  text-align: center; margin-bottom: 40px;
+}
+.home-logo-big {
+  font-size: 48px; margin-bottom: 14px;
+}
+.home-title {
+  font-size: 32px; font-weight: 800; color: var(--blk); margin-bottom: 6px;
+}
+.home-sub {
+  font-size: 16px; color: #666;
+}
+
+.cases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.case-card {
+  border-radius: 14px;
+  border: 2px solid var(--grey-mid);
+  padding: 24px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+}
+.case-card.available { border-color: var(--teal-border); }
+.case-card.available:hover {
+  border-color: var(--teal);
+  box-shadow: 0 6px 24px rgba(13,148,136,0.18);
+  transform: translateY(-2px);
+}
+.case-card.locked { opacity: 0.5; cursor: not-allowed; background: var(--grey); }
+.case-num {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--teal); margin-bottom: 8px;
+}
+.case-title { font-size: 20px; font-weight: 700; color: var(--blk); margin-bottom: 4px; }
+.case-topic { font-size: 13px; color: #777; margin-bottom: 16px; }
+.case-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.case-tag {
+  font-size: 11px; padding: 3px 10px; border-radius: 99px;
+  background: var(--teal-pale); color: var(--teal); border: 1px solid var(--teal-border);
+  font-weight: 500;
+}
+.case-card.locked .case-tag { background: #f0f0f0; color: #999; border-color: #ddd; }
+.lock-badge {
+  position: absolute; top: 14px; right: 14px;
+  font-size: 16px;
+}
+
+/* ══════════════════════════════
+   WELCOME (case intro)
+══════════════════════════════ */
+.welcome-wrapper {
+  max-width: 640px; margin: 10px auto;
+  background: linear-gradient(135deg, var(--teal-pale) 0%, white 100%);
+  border: 2px solid var(--teal-border); border-radius: 16px;
+  padding: 36px 40px;
+}
+.room-label {
+  font-size: 11px; font-weight: 700; color: var(--teal);
+  letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px;
+}
+.patient-name { font-size: 30px; font-weight: 800; color: var(--blk); margin-bottom: 4px; }
+.patient-sub  { font-size: 14px; color: #666; margin-bottom: 18px; }
+.task-box {
+  background: var(--blk); color: white;
+  border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;
+}
+.task-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--teal-l); margin-bottom: 4px; }
+.task-text  { font-size: 18px; font-weight: 600; }
+.pmh-row    { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.tag {
+  background: white; border: 1px solid var(--grey-mid);
+  border-radius: 99px; padding: 5px 13px; font-size: 12px; color: #555;
+}
+.timer-note { font-size: 12px; color: #999; text-align: center; margin-bottom: 18px; }
+
+/* ── HOVER-LABEL STAGE ── */
+.patient-scene {
+  display: flex; gap: 24px; align-items: flex-start;
+  justify-content: center; margin-bottom: 20px; flex-wrap: wrap;
+}
+.gait-side { text-align: center; }
+.gait-caption { font-size: 12px; color: #888; margin-top: 6px; font-style: italic; }
+.hotspot-side { position: relative; display: inline-block; }
+.patient-img { display: block; max-height: 460px; border-radius: 12px; border: 2px solid var(--grey-mid); }
+.gait-img    { display: block; max-height: 460px; border-radius: 12px; border: 2px solid var(--grey-mid); }
+
+.hotspot {
+  position: absolute; width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(13,148,136,0.15); border: 2.5px solid var(--teal);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px; color: var(--teal);
+  cursor: pointer; transform: translate(-50%, -50%);
+  animation: hs-pulse 2.2s ease-in-out infinite;
+  z-index: 10; transition: background 0.2s, color 0.2s; user-select: none;
+}
+.hotspot:hover    { background: rgba(13,148,136,0.3); }
+.hotspot.revealed { background: var(--teal); color: white; animation: none; }
+@keyframes hs-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(13,148,136,0.5); }
+  55%      { box-shadow: 0 0 0 9px rgba(13,148,136,0); }
+}
+.hs-legend { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+.hs-item   { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #888; }
+.hs-item.done { color: var(--teal); font-weight: 600; }
+.hs-num {
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid #ccc;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.hs-item.done .hs-num { background: var(--teal); border-color: var(--teal); color: white; }
+
+/* ── POPUP ── */
+#hotspot-popup {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 300;
+  align-items: center; justify-content: center;
+}
+#hotspot-popup.open { display: flex; }
+.popup-card {
+  background: white; border-radius: 16px; padding: 28px 28px 24px;
+  max-width: 500px; width: 92%; max-height: 82vh; overflow-y: auto;
+  position: relative; border-top: 4px solid var(--teal);
+  box-shadow: 0 24px 70px rgba(0,0,0,0.32); animation: pop-in 0.25s ease;
+}
+@keyframes pop-in { from{transform:scale(0.88) translateY(20px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+.popup-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; font-size: 24px; cursor: pointer; color: #aaa; line-height: 1;
+}
+.popup-close:hover { color: var(--blk); }
+.popup-title { font-size: 17px; font-weight: 700; color: var(--teal); margin-bottom: 14px; padding-right: 30px; }
+.popup-imgs  { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.popup-imgs img { border-radius: 8px; border: 1px solid var(--grey-mid); max-height: 140px; max-width: 48%; object-fit: cover; }
+.popup-findings { list-style: none; }
+.popup-findings li {
+  padding: 9px 0; border-bottom: 1px solid var(--grey-mid);
+  font-size: 14px; line-height: 1.55; display: flex; gap: 8px; align-items: flex-start;
+}
+.popup-findings li::before { content: '▸'; color: var(--teal); flex-shrink: 0; margin-top: 1px; }
+.popup-findings li:last-child { border-bottom: none; }
+
+/* ── MULTI-SELECT ── */
+.brain-img-row { text-align: center; margin-bottom: 20px; }
+.brain-img-row img { max-height: 110px; border-radius: 8px; }
+.ms-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+.ms-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 13px 16px; border-radius: 10px;
+  border: 2px solid var(--grey-mid); background: white; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.ms-card:hover:not(.locked) { border-color: var(--teal-l); background: var(--teal-pale); }
+.ms-card.selected { border-color: var(--teal); background: var(--teal-pale); }
+.ms-card.correct  { border-color: var(--green); background: var(--green-pale); cursor: default; }
+.ms-card.wrong    { border-color: var(--red); background: var(--red-pale); cursor: default; }
+.ms-card.locked   { cursor: default; }
+.ms-box {
+  width: 22px; height: 22px; border-radius: 5px;
+  border: 2px solid var(--grey-mid); flex-shrink: 0; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s;
+}
+.ms-card.selected .ms-box { background: var(--teal); border-color: var(--teal); color: white; }
+.ms-card.correct  .ms-box { background: var(--green); border-color: var(--green); color: white; }
+.ms-card.wrong    .ms-box { background: var(--red); border-color: var(--red); color: white; }
+.ms-body { flex: 1; }
+.ms-text { font-size: 14px; line-height: 1.4; }
+.ms-feedback {
+  display: none; margin-top: 8px; padding: 8px 12px;
+  background: #fff5f5; border-left: 3px solid var(--red);
+  border-radius: 6px; font-size: 13px; color: #b91c1c; line-height: 1.5;
+}
+.ms-feedback.shown { display: block; }
+.correct-feedback {
+  display: none; margin-top: 8px; padding: 8px 12px;
+  background: var(--green-pale); border-left: 3px solid var(--green);
+  border-radius: 6px; font-size: 13px; color: #166534; line-height: 1.5;
+}
+.correct-feedback.shown { display: block; }
+.result-banner {
+  display: none; padding: 14px 18px; border-radius: 10px;
+  margin: 14px 0; font-size: 14px; line-height: 1.65;
+  align-items: flex-start; gap: 12px;
+}
+.result-banner.shown { display: flex; }
+.result-banner.success { background: var(--green-pale); border-left: 4px solid var(--green); color: #166534; }
+.result-banner .lb-img { height: 44px; flex-shrink: 0; }
+
+/* ── DRAG-DROP ── */
+.drag-intro {
+  background: var(--teal-pale); border: 1px solid var(--teal-border);
+  border-radius: 10px; padding: 13px 18px;
+  font-size: 14px; color: #0f766e; margin-bottom: 18px; line-height: 1.6;
+}
+.chip-pool {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px;
+  background: var(--grey); border: 2px dashed var(--grey-mid);
+  border-radius: 10px; min-height: 58px; margin-bottom: 18px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.chip-pool.drag-over { border-color: var(--teal); background: var(--teal-pale); }
+.chip {
+  padding: 7px 14px; border-radius: 99px;
+  border: 2px solid var(--teal); background: white;
+  font-size: 13px; font-weight: 500; cursor: grab;
+  transition: all 0.2s; user-select: none; white-space: nowrap;
+}
+.chip:hover:not(.correct):not(.wrong) { background: var(--teal-pale); }
+.chip.dragging { opacity: 0.35; cursor: grabbing; }
+.chip.correct  { background: var(--green); border-color: var(--green); color: white; cursor: default; }
+.chip.wrong    { background: var(--red); border-color: var(--red); color: white; }
+/* Chips that belong in both cortex columns get a subtle dual indicator */
+.chip.dual { border-style: dashed; }
+
+.drop-columns-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.drop-columns-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.drop-zone {
+  min-height: 130px; border-radius: 12px;
+  border: 2px dashed var(--grey-mid); background: white; padding: 10px;
+  transition: border-color 0.2s, background 0.2s;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.drop-zone.drag-over { border-color: var(--teal); background: var(--teal-pale); }
+.dz-header {
+  font-size: 12px; font-weight: 700; color: var(--teal); text-align: center;
+  padding-bottom: 8px; margin-bottom: 4px;
+  border-bottom: 2px solid var(--teal-border); line-height: 1.4;
+}
+.drop-zone .chip { white-space: normal; display: block; text-align: center; border-radius: 8px; }
+
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)}
+  40%{transform:translateX(7px)}  60%{transform:translateX(-5px)} 80%{transform:translateX(5px)}
+}
+.shake { animation: shake 0.4s ease; }
+
+.drag-result {
+  display: none; padding: 14px 18px; border-radius: 10px;
+  margin-bottom: 12px; font-size: 14px; line-height: 1.6;
+}
+.drag-result.shown   { display: block; }
+.drag-result.success { background: var(--green-pale); border-left: 4px solid var(--green); color: #166534; }
+.drag-result.partial { background: #fffbeb; border-left: 4px solid var(--amber); color: #92400e; }
+
+/* ── NARRATIVE ── */
+.narrative-wrap { max-width: 600px; margin: 0 auto; }
+.narrative-scene {
+  background: var(--grey); border-radius: 12px;
+  padding: 20px 24px; font-size: 15px; line-height: 1.75; color: #444; margin-bottom: 20px;
+}
+.narrative-reveal {
+  display: none; background: white;
+  border: 2px solid var(--teal-border); border-radius: 12px;
+  padding: 20px 24px; margin-bottom: 20px;
+}
+.narrative-reveal.shown { display: block; animation: pop-in 0.3s ease; }
+.speech-icon  { font-size: 44px; text-align: center; margin-bottom: 10px; }
+.speech-title { font-size: 15px; font-weight: 700; color: var(--teal); margin-bottom: 10px; }
+.speech-finding { font-size: 15px; line-height: 1.75; color: var(--blk); }
+
+/* ── DIAGNOSIS ── */
+.dx-wrap    { max-width: 620px; margin: 0 auto; }
+.dx-options { display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px; }
+.dx-opt {
+  display: flex; align-items: center; gap: 13px;
+  padding: 13px 18px; border-radius: 10px;
+  border: 2px solid var(--grey-mid); background: white;
+  cursor: pointer; font-size: 14px; transition: all 0.2s;
+}
+.dx-opt:hover:not(.answered) { border-color: var(--teal-l); background: var(--teal-pale); }
+.dx-opt.correct  { border-color: var(--green); background: var(--green-pale); cursor: default; }
+.dx-opt.wrong    { border-color: var(--red);   background: var(--red-pale);   cursor: default; }
+.dx-opt.answered { cursor: default; pointer-events: none; }
+.dx-letter {
+  width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--grey-mid);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; flex-shrink: 0; transition: all 0.2s;
+}
+.dx-opt:hover:not(.answered) .dx-letter { border-color: var(--teal); color: var(--teal); }
+.dx-opt.correct .dx-letter { background: var(--green); border-color: var(--green); color: white; }
+.dx-opt.wrong   .dx-letter { background: var(--red);   border-color: var(--red);   color: white; }
+.dx-explanation {
+  display: none; padding: 18px 20px; border-radius: 10px;
+  background: var(--green-pale); border-left: 4px solid var(--green);
+  font-size: 14px; line-height: 1.75; color: #166534; margin-bottom: 16px;
+}
+.dx-explanation.shown { display: block; animation: pop-in 0.3s ease; }
+
+/* ── CELEBRATION ── */
+.celebrate-wrap { text-align: center; padding: 30px 20px 20px; }
+.trophy-img  { max-height: 200px; margin: 0 auto 20px; display: block; }
+.trophy-ph   { font-size: 90px; margin-bottom: 10px; }
+.celeb-title { font-size: 34px; font-weight: 800; color: var(--teal); margin-bottom: 10px; }
+.celeb-msg   { font-size: 17px; color: #444; margin-bottom: 8px; line-height: 1.6; max-width: 480px; margin-left: auto; margin-right: auto; }
+.celeb-sub   { font-size: 13px; color: #999; margin-bottom: 28px; }
+.confetti-layer { position: fixed; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
+.conf-piece  { position: absolute; top: -16px; border-radius: 2px; animation: conf-fall linear forwards; }
+@keyframes conf-fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HEADER ══════════════ -->
+<header id="game-header">
+  <div class="logo-area">
+    <div class="logo-mark">N</div>
+    <div>
+      <span class="logo-name">Neuro Confidence Lab</span>
+      <span class="logo-case" id="header-case-label"> </span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button id="home-btn" onclick="goHome()">← Cases</button>
+    <div id="timer">10:00</div>
+  </div>
+</header>
+
+<!-- ══════════════ PROGRESS BAR ══════════════ -->
+<div id="progress-bar">
+  <div class="progress-track">
+    <div class="prog-step" data-step="1"><div class="prog-dot">🔍</div><div class="prog-label">Inspect</div></div>
+    <div class="prog-step" data-step="2"><div class="prog-dot">🧠</div><div class="prog-label">Localise</div></div>
+    <div class="prog-step" data-step="3"><div class="prog-dot">🦴</div><div class="prog-label">Anatomy</div></div>
+    <div class="prog-step" data-step="4"><div class="prog-dot">🩺</div><div class="prog-label">Clinical</div></div>
+    <div class="prog-step" data-step="5"><div class="prog-dot">🗣</div><div class="prog-label">Speech</div></div>
+    <div class="prog-step" data-step="6"><div class="prog-dot">💊</div><div class="prog-label">Diagnose</div></div>
+    <div class="prog-step" data-step="7"><div class="prog-dot">🏆</div><div class="prog-label">Solved!</div></div>
+  </div>
+</div>
+
+<!-- ══════════════ CONTENT AREA ══════════════ -->
+<div id="content-area">
+
+  <!-- ─── HOME SCREEN: Case Selection ─── -->
+  <div id="screen-home" class="screen active">
+    <div class="home-hero">
+      <div class="home-logo-big">🧠</div>
+      <div class="home-title">Neuro Confidence Lab</div>
+      <div class="home-sub">Select a case to begin</div>
+    </div>
+    <div class="cases-grid">
+
+      <!-- Case 1 — available -->
+      <div class="case-card available" onclick="openCase(1)">
+        <div class="case-num">Case 1</div>
+        <div class="case-title">Right Sided Weakness</div>
+        <div class="case-topic">Mr Johnson, 68 · Rehab Ward</div>
+        <div class="case-tags">
+          <span class="case-tag">⏱ 10 min</span>
+          <span class="case-tag">7 stages</span>
+        </div>
+      </div>
+
+      <!-- Case 2 — locked -->
+      <div class="case-card locked">
+        <div class="lock-badge">🔒</div>
+        <div class="case-num">Case 2</div>
+        <div class="case-title">Coming Soon</div>
+        <div class="case-topic">More cases in development</div>
+        <div class="case-tags"><span class="case-tag">Locked</span></div>
+      </div>
+
+      <!-- Case 3 — locked -->
+      <div class="case-card locked">
+        <div class="lock-badge">🔒</div>
+        <div class="case-num">Case 3</div>
+        <div class="case-title">Coming Soon</div>
+        <div class="case-topic">More cases in development</div>
+        <div class="case-tags"><span class="case-tag">Locked</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── STAGE 0: WELCOME (Case intro) ─── -->
+  <div id="stage-welcome" class="stage">
+    <div class="welcome-wrapper">
+      <div class="room-label">🚪 Room 1 · Case 1</div>
+      <div class="patient-name">Mr Johnson</div>
+      <div class="patient-sub">68-year-old male · Rehab Ward · Day 28 post-admission</div>
+
+      <div class="task-box">
+        <div class="task-label">Your task</div>
+        <div class="task-text">Examine gait and proceed to examine the motor system.</div>
+      </div>
+
+      <div class="pmh-row">
+        <div class="tag">📋 Hypertension</div>
+        <div class="tag">❤️ Atrial Fibrillation</div>
+        <div class="tag">✋ Right-handed</div>
+        <div class="tag">🏥 4 weeks post acute onset weakness</div>
+      </div>
+
+      <p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:18px;">
+        Mr Johnson was admitted four weeks ago with an acute onset of right-sided weakness.
+        He is now on the rehabilitation ward. You have been asked to assess him.
+      </p>
+
+      <p class="timer-note">⏱ You have <strong>10 minutes</strong> — the clock starts when you enter the room.</p>
+
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn btn-primary" onclick="startCase1()">🚪 Enter the Room — Start Timer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STAGE 1: HOVER-LABEL ─── -->
+  <div id="stage-inspect" class="stage">
+    <div class="stage-header">
+      <div class="stage-badge">Stage 1 · Inspection</div>
+      <h1 class="stage-title">Motor &amp; Cranial Nerve Examination</h1>
+      <p class="stage-intro">On general inspection you perform a gait examination (as shown).
+      Next you examine Mr Johnson's motor system.
+      <strong>Click each numbered circle</strong> to reveal the findings.</p>
+    </div>
+
+    <div class="hs-legend">
+      <div class="hs-item" id="hs-leg-1"><div class="hs-num">1</div> Cranial Nerves</div>
+      <div class="hs-item" id="hs-leg-2"><div class="hs-num">2</div> Upper Limb</div>
+      <div class="hs-item" id="hs-leg-3"><div class="hs-num">3</div> Lower Limb</div>
+    </div>
+
+    <div class="patient-scene">
+      <div class="gait-side">
+        <img src="images/case1-patient_gait.png" alt="Gait examination" class="gait-img"
+             onerror="showPlaceholder(this,'Gait examination','case1-patient_gait.png',180,380)">
+        <p class="gait-caption">Gait examination</p>
+      </div>
+      <div class="hotspot-side" id="patient-hotspot-area">
+        <img src="images/case1-patient.png" alt="Mr Johnson" class="patient-img"
+             onerror="showPlaceholder(this,'Patient diagram','case1-patient.png',220,440)">
+        <div class="hotspot" id="hs1" style="left:60%;top:12%;" onclick="openHotspot(1)">1</div>
+        <div class="hotspot" id="hs2" style="left:25%;top:38%;" onclick="openHotspot(2)">2</div>
+        <div class="hotspot" id="hs3" style="left:22%;top:75%;" onclick="openHotspot(3)">3</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="inspect-continue" disabled onclick="goToStage('motor-loc')">
+        Interpret Motor Findings →
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── POPUP ─── -->
+  <div id="hotspot-popup" onclick="closeHotspotOverlay(event)">
+    <div class="popup-card">
+      <button class="popup-close" onclick="closeHotspot()">✕</button>
+      <div class="popup-title"   id="popup-title"></div>
+      <div class="popup-imgs"    id="popup-imgs"></div>
+      <ul class="popup-findings" id="popup-findings"></ul>
+    </div>
+  </div>
+
+  <!-- ─── STAGE 2: MULTI-SELECT ─── -->
+  <div id="stage-motor-loc" class="stage">
+    <div class="stage-header">
+      <div class="stage-badge">Stage 2 · Neuro-Detective</div>
+      <h1 class="stage-title">Where is the Lesion?</h1>
+      <p class="stage-intro">Given your findings so far — <strong>motor and cranial nerve examination only</strong> —
+        what are the possible sites of this lesion? Select all that apply.</p>
+    </div>
+    <div class="brain-img-row">
+      <img src="images/brain-detective.png" alt="Brain detective"
+           onerror="showPlaceholder(this,'Brain detective','brain-detective.png',180,100)">
+    </div>
+    <div class="ms-grid" id="ms-grid"></div>
+    <div class="result-banner success" id="ms-result">
+      <img src="images/light-bulb.png" alt="" class="lb-img" onerror="this.style.display='none'">
+      <div>
+        <strong>Motor reasoning complete!</strong><br>
+        Cortex (MCA territory) and internal capsule both remain possible on motor and cranial nerve grounds alone.
+        We need to dig deeper — let's look at the anatomy first.
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-dark"    onclick="checkMotorSelect()">Check My Answers</button>
+      <button class="btn btn-primary" id="ms-continue" disabled onclick="goToStage('drag-anatomy')">
+        Proceed to Next Stage →
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── STAGE 3: DRAG-DROP ANATOMICAL ─── -->
+  <div id="stage-drag-anatomy" class="stage">
+    <div class="stage-header">
+      <div class="stage-badge">Stage 3 · Anatomy</div>
+      <h1 class="stage-title">Let's Clinch the Diagnosis</h1>
+      <p class="stage-intro">You've narrowed the lesion to cerebral cortex or internal capsule.
+        First, place each anatomical structure in the correct column.</p>
+    </div>
+    <div class="drag-intro">
+      🧩 <strong>Drag each structure</strong> into the correct column, then hit <em>Check Answers</em>.
+      Chips in the wrong column will bounce back!
+    </div>
+    <div class="chip-pool" id="anatomy-pool"
+         ondragover="poolDragOver(event)" ondrop="poolDrop(event,'anatomy')" ondragleave="poolDragLeave(event)">
+    </div>
+    <div class="drop-columns-2">
+      <div class="drop-zone" id="dz-cortex" data-zone="cortex"
+           ondragover="zoneDragOver(event)" ondrop="zoneDrop(event,'anatomy')" ondragleave="zoneDragLeave(event)">
+        <div class="dz-header">🧠 Cortex<br>(MCA Territory)</div>
+      </div>
+      <div class="drop-zone" id="dz-capsule" data-zone="capsule"
+           ondragover="zoneDragOver(event)" ondrop="zoneDrop(event,'anatomy')" ondragleave="zoneDragLeave(event)">
+        <div class="dz-header">⚪ Internal Capsule<br>(Lacunar)</div>
+      </div>
+    </div>
+    <div class="drag-result" id="anatomy-result"></div>
+    <div class="btn-row">
+      <button class="btn btn-dark"    onclick="checkDragDrop('anatomy')">Check Answers</button>
+      <button class="btn btn-primary" id="anatomy-continue" disabled onclick="goToStage('drag-clinical')">
+        On to Clinical Features →
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── STAGE 4: DRAG-DROP CLINICAL (3-COL) ─── -->
+  <div id="stage-drag-clinical" class="stage">
+    <div class="stage-header">
+      <div class="stage-badge">Stage 4 · Clinical Features</div>
+      <h1 class="stage-title">Cortex vs Capsule — At the Bedside</h1>
+      <p class="stage-intro">Now drag the <strong>clinical bedside features</strong> into the correct column.
+        Some features may fit in more than one column — use your best judgement.</p>
+    </div>
+    <div class="drag-intro">
+      🩺 Dominant hemisphere = usually <strong>left</strong> · Non-dominant = usually <strong>right</strong>.<br>
+      You'll notice some features appear <strong>twice</strong> — that's a clue! Place one copy in each cortex column.
+    </div>
+    <div class="chip-pool" id="clinical-pool"
+         ondragover="poolDragOver(event)" ondrop="poolDrop(event,'clinical')" ondragleave="poolDragLeave(event)">
+    </div>
+    <div class="drop-columns-3">
+      <div class="drop-zone" id="dz-dominant" data-zone="dominant"
+           ondragover="zoneDragOver(event)" ondrop="zoneDrop(event,'clinical')" ondragleave="zoneDragLeave(event)">
+        <div class="dz-header">🧠 Cortex<br>Dominant<br><small style="font-weight:400;color:#0f766e;">(Usually Left)</small></div>
+      </div>
+      <div class="drop-zone" id="dz-nondominant" data-zone="nondominant"
+           ondragover="zoneDragOver(event)" ondrop="zoneDrop(event,'clinical')" ondragleave="zoneDragLeave(event)">
+        <div class="dz-header">🧠 Cortex<br>Non-Dominant<br><small style="font-weight:400;color:#0f766e;">(Usually Right)</small></div>
+      </div>
+      <div class="drop-zone" id="dz-lcapsule" data-zone="lcapsule"
+           ondragover="zoneDragOver(event)" ondrop="zoneDrop(event,'clinical')" ondragleave="zoneDragLeave(event)">
+        <div class="dz-header">⚪ Internal Capsule<br>(Lacunar)</div>
+      </div>
+    </div>
+    <div class="drag-result" id="clinical-result"></div>
+    <div class="btn-row">
+      <button class="btn btn-dark"    onclick="checkDragDrop('clinical')">Check Answers</button>
+      <button class="btn btn-primary" id="clinical-continue" disabled onclick="goToStage('speech')">
+        On to the Key Clue →
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── STAGE 5: NARRATIVE ─── -->
+  <div id="stage-speech" class="stage">
+    <div class="stage-header">
+      <div class="stage-badge">Stage 5 · Speech</div>
+      <h1 class="stage-title">One More Examination…</h1>
+      <p class="stage-intro">Mr Johnson has been fairly quiet during your examination.
+        Before you make your diagnosis, there is one more thing to assess.</p>
+    </div>
+    <div class="narrative-wrap">
+      <div class="narrative-scene">
+        Mr Johnson has been quiet throughout your examination.
+        You note that he is fully <strong>aware of both sides of his body</strong> —
+        there is <strong>no sensory inattention</strong>, and he correctly identifies his left and right sides.
+        <br><br>
+        Now: <em>What about his speech?</em>
+      </div>
+      <div class="btn-row" style="margin-top:0;margin-bottom:20px;">
+        <button class="btn btn-outline" id="speech-btn" onclick="revealSpeech()">
+          🗣 Perform Speech Examination →
+        </button>
+      </div>
+      <div class="narrative-reveal" id="speech-reveal">
+        <div class="speech-icon">💬</div>
+        <div class="speech-title">Speech Examination Findings</div>
+        <div class="speech-finding">
+          Mr Johnson <strong>struggles to find words</strong> — he knows what he wants to say but cannot produce it.
+          He appears frustrated. He can follow <strong>two and three step commands</strong>.
+          He is <strong>unable to name a watch or a pen</strong> when asked.
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="speech-continue" disabled onclick="goToStage('diagnosis')">
+          Make the Diagnosis →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STAGE 6: DIAGNOSIS ─── -->
+  <div id="stage-diagnosis" class="stage">
+    <div class="stage-header">
+      <div class="stage-badge">Stage 6 · Diagnosis</div>
+      <h1 class="stage-title">What is the Most Likely Diagnosis?</h1>
+      <p class="stage-intro">Drawing on everything you have found — motor, cranial nerve, and speech examination.
+        Select the single best answer.</p>
+    </div>
+    <div class="dx-wrap">
+      <div class="dx-options" id="dx-options"></div>
+      <div class="dx-explanation" id="dx-explanation">
+        <strong>✅ Left MCA Territory Cortical Infarct</strong><br><br>
+        <strong>Right-sided deficits</strong> → lesion is in the <strong>left hemisphere</strong> (contralateral, above the pyramidal decussation).<br><br>
+        <strong>Arm and face more affected than leg</strong> → MCA territory (lateral cortex).
+        ACA territory supplies the medial cortex and produces leg-predominant weakness.<br><br>
+        <strong>Expressive aphasia</strong> — non-fluent, word-finding difficulty, intact comprehension — is a signature of the <strong>dominant (left) cortex</strong>.
+        This <em>excludes</em> a capsular lacunar infarct, which is a white matter relay with no cortical features.<br><br>
+        Right MCA is excluded by the side of deficits. ACA territory is excluded by the arm/face predominance.
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="dx-continue" disabled onclick="goToStage('celebrate')">
+          Complete Escape Room 🏆
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STAGE 7: CELEBRATION ─── -->
+  <div id="stage-celebrate" class="stage">
+    <div class="confetti-layer" id="confetti-layer"></div>
+    <div class="celebrate-wrap">
+      <div id="trophy-wrap">
+        <img src="images/brain-trophy1.png" alt="Trophy" class="trophy-img"
+             onerror="document.getElementById('trophy-wrap').innerHTML='<div class=\'trophy-ph\'>🏆</div>'">
+      </div>
+      <div class="celeb-title">Room Escaped! 🎉</div>
+      <div class="celeb-msg">
+        Well done — you completed Room 1!<br>
+        But that was just the warm-up.<br>
+        When you are ready, join me for another case.
+      </div>
+      <div class="celeb-sub">Case 1 · Left MCA Territory Cortical Infarct · Completed</div>
+      <button class="btn btn-primary" onclick="goHome()">← Back to Cases</button>
+    </div>
+  </div>
+
+</div><!-- /content-area -->
+
+<script>
+// ════════════════════════════
+//  GAME DATA
+// ════════════════════════════
+
+const HOTSPOTS = {
+  1: {
+    label: 'Cranial Nerve Findings',
+    images: ['images/case1-popup-facial-droop.png','images/case1-popup-tongue-deviation.png'],
+    findings: [
+      'Eye movements, pupils and eyelids: <strong>Normal bilaterally</strong>',
+      'Right facial droop: <strong>forehead sparing</strong> — patient able to raise both eyebrows',
+      'Speech: <strong>Dysarthria</strong>',
+      'Tongue: <strong>Deviation to the right</strong>'
+    ]
+  },
+  2: {
+    label: 'Upper Limb Examination',
+    images: [],
+    findings: [
+      'Right arm power: <strong>1/5 throughout</strong> — spastic posture at rest',
+      'Tone: <strong>Increased (spasticity)</strong>',
+      'Reflexes: <strong>Brisk throughout on the right</strong>',
+      'Left upper limb: <strong>Normal</strong>'
+    ]
+  },
+  3: {
+    label: 'Lower Limb Examination',
+    images: [],
+    findings: [
+      'Right leg power: <strong>3/5</strong>',
+      'Tone: <strong>Increased</strong>',
+      'Plantar response: <strong>Babinski positive (right)</strong>',
+      'Left lower limb: <strong>Normal</strong>'
+    ]
+  }
+};
+
+const MOTOR_OPTIONS = [
+  {
+    id: 'mca', correct: true,
+    text: 'Contralateral motor cortex (MCA territory)',
+    successNote: 'Arm and face > leg = lateral MCA territory ✓'
+  },
+  {
+    id: 'aca', correct: false,
+    text: 'Contralateral motor cortex (ACA territory)',
+    feedback: 'Arm and face are <strong>more affected than the leg</strong>. This localises to the <strong>MCA territory</strong> (lateral surface). The ACA supplies the medial cortex — ACA strokes cause leg-predominant weakness.'
+  },
+  {
+    id: 'capsule', correct: true,
+    text: 'Contralateral internal capsule (lacunar infarct)',
+    successNote: 'A dense capsular stroke can produce a similar motor picture at this stage ✓'
+  },
+  {
+    id: 'midbrain', correct: false,
+    text: 'Midbrain',
+    feedback: 'CN III is <strong>intact bilaterally</strong>. A midbrain lesion causing hemiplegia would also produce an ipsilateral CN III palsy — <em>Weber\'s syndrome</em>. No CN III signs here.'
+  },
+  {
+    id: 'pons', correct: false,
+    text: 'Pons',
+    feedback: 'The forehead is <strong>spared</strong> (UMN facial pattern). A pontine lesion disrupts the CN VII nucleus producing <strong>LMN facial palsy</strong> — the whole face is affected, forehead included. Our patient\'s forehead-sparing excludes this. Also: same-side face and limbs = hemispheric lesion, not brainstem.'
+  },
+  {
+    id: 'medulla', correct: false,
+    text: 'Medulla',
+    feedback: 'The CN VII nucleus lies <strong>above the medullary level</strong>. Facial droop cannot be explained by a medullary lesion. Medullary strokes produce lower cranial nerve signs (IX, X, XI, XII) and crossed deficits — not facial droop with contralateral limb weakness.'
+  }
+];
+
+const ANATOMY_CHIPS = [
+  { id: 'pmc',  text: 'Primary motor cortex',           correct: 'cortex'  },
+  { id: 'psc',  text: 'Primary sensory cortex',          correct: 'cortex'  },
+  { id: 'hsp',  text: 'Higher sensory processing',       correct: 'cortex'  },
+  { id: 'exec', text: 'Executive function / planning',   correct: 'cortex'  },
+  { id: 'spch', text: 'Speech centres',                  correct: 'cortex'  },
+  { id: 'vis',  text: 'Visual cortex',                   correct: 'cortex'  },
+  { id: 'atn',  text: 'Attention / neglect networks',    correct: 'cortex'  },
+  { id: 'cst',  text: 'Corticospinal fibres',            correct: 'capsule' },
+  { id: 'cbt',  text: 'Corticobulbar fibres',            correct: 'capsule' },
+  { id: 'thal', text: 'Thalamocortical sensory fibres',  correct: 'capsule' }
+];
+
+// Single-column chips: one string zone.
+// Dual chips appear TWICE — one copy for each cortex column — and are accepted in either cortex column.
+// The learner sees two copies and naturally places one in dominant and one in non-dominant,
+// teaching that these features can occur with a lesion in EITHER hemisphere.
+const CLINICAL_CHIPS = [
+  { id: 'cl-aph',    text: 'Aphasia / dysphasia',                             correct: 'dominant'             },
+  { id: 'cl-neg',    text: 'Hemispatial neglect',                              correct: 'nondominant'          },
+  { id: 'cl-hh-1',   text: 'Homonymous hemianopia',                           correct: 'dominant,nondominant' },
+  { id: 'cl-hh-2',   text: 'Homonymous hemianopia',                           correct: 'dominant,nondominant' },
+  { id: 'cl-grph-1', text: 'Graphaesthesia loss',                             correct: 'dominant,nondominant' },
+  { id: 'cl-grph-2', text: 'Graphaesthesia loss',                             correct: 'dominant,nondominant' },
+  { id: 'cl-ster-1', text: 'Stereognosis loss',                               correct: 'dominant,nondominant' },
+  { id: 'cl-ster-2', text: 'Stereognosis loss',                               correct: 'dominant,nondominant' },
+  { id: 'cl-pm',     text: 'Pure motor hemiparesis (no cortical features)',   correct: 'lcapsule'             },
+  { id: 'cl-psm',    text: 'Pure sensorimotor deficit (no cortical features)',correct: 'lcapsule'             }
+];
+
+const DIAGNOSIS_OPTIONS = [
+  { id: 'dx-a', letter: 'A', text: 'Left MCA territory cortical infarct',   correct: true  },
+  { id: 'dx-b', letter: 'B', text: 'Right MCA territory cortical infarct',  correct: false },
+  { id: 'dx-c', letter: 'C', text: 'Left internal capsule lacunar infarct', correct: false },
+  { id: 'dx-d', letter: 'D', text: 'Left ACA territory infarct',            correct: false },
+  { id: 'dx-e', letter: 'E', text: 'Right ACA territory infarct',           correct: false }
+];
+
+const STAGE_STEPS = {
+  'inspect': 1, 'motor-loc': 2, 'drag-anatomy': 3,
+  'drag-clinical': 4, 'speech': 5, 'diagnosis': 6, 'celebrate': 7
+};
+
+// ════════════════════════════
+//  STATE
+// ════════════════════════════
+let timerInterval    = null;
+let secondsLeft      = 600;
+let hotspotsRevealed = new Set();
+let msChecked        = false;
+let draggedChipId    = null;
+
+// ════════════════════════════
+//  INIT
+// ════════════════════════════
+function init() {
+  renderMotorOptions();
+  renderDragChips('anatomy', ANATOMY_CHIPS);
+  renderDragChips('clinical', CLINICAL_CHIPS);
+  renderDiagnosisOptions();
+}
+
+// ════════════════════════════
+//  NAVIGATION HELPERS
+// ════════════════════════════
+function showScreen(id) {
+  // Hide all screens and stages
+  document.querySelectorAll('.screen, .stage').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  // Scroll content area to top — instant
+  const ca = document.getElementById('content-area');
+  ca.scrollTop = 0;
+  // Also scroll window top for safety
+  window.scrollTo(0, 0);
+}
+
+// ════════════════════════════
+//  HOME
+// ════════════════════════════
+function goHome() {
+  // Stop timer
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  // Hide progress / timer / home btn
+  document.getElementById('progress-bar').style.display = 'none';
+  document.getElementById('timer').style.display = 'none';
+  document.getElementById('home-btn').style.display = 'none';
+  document.getElementById('header-case-label').textContent = ' ';
+  // Confetti cleanup
+  document.getElementById('confetti-layer').innerHTML = '';
+  // Full reset of game state
+  fullReset();
+  // Show home
+  showScreen('screen-home');
+}
+
+function openCase(num) {
+  if (num !== 1) return; // only case 1 available
+  showScreen('stage-welcome');
+  document.getElementById('header-case-label').textContent = 'Case 1 · Right Sided Weakness';
+  document.getElementById('home-btn').style.display = 'flex';
+}
+
+function startCase1() {
+  startTimer();
+  document.getElementById('progress-bar').style.display = 'block';
+  document.getElementById('timer').style.display = 'block';
+  goToStage('inspect');
+}
+
+// ════════════════════════════
+//  STAGE NAVIGATION
+// ════════════════════════════
+function goToStage(id) {
+  showScreen('stage-' + id);
+  updateProgress(id);
+  if (id === 'celebrate') {
+    if (timerInterval) clearInterval(timerInterval);
+    setTimeout(launchConfetti, 400);
+  }
+}
+
+function updateProgress(stageId) {
+  const step = STAGE_STEPS[stageId];
+  if (!step) return;
+  document.querySelectorAll('.prog-step').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.remove('active','done');
+    if (s < step)  el.classList.add('done');
+    if (s === step) el.classList.add('active');
+  });
+}
+
+// ════════════════════════════
+//  TIMER
+// ════════════════════════════
+function startTimer() {
+  secondsLeft = 600;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    secondsLeft = Math.max(0, secondsLeft - 1);
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer');
+  const m  = Math.floor(secondsLeft / 60);
+  const s  = secondsLeft % 60;
+  el.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  el.className = '';
+  if (secondsLeft <= 60)       el.classList.add('danger');
+  else if (secondsLeft <= 180) el.classList.add('amber');
+}
+
+// ════════════════════════════
+//  IMAGE PLACEHOLDER
+// ════════════════════════════
+function showPlaceholder(img, label, filename, w, h) {
+  const ph = document.createElement('div');
+  ph.className = 'img-placeholder';
+  ph.style.width = w + 'px'; ph.style.height = h + 'px';
+  ph.innerHTML = `<div class="ph-icon">🖼</div><div class="ph-name">${label}</div><div class="ph-file">${filename}</div>`;
+  if (img.parentNode) img.parentNode.replaceChild(ph, img);
+}
+
+// ════════════════════════════
+//  HOTSPOTS
+// ════════════════════════════
+function openHotspot(id) {
+  const data = HOTSPOTS[id];
+  document.getElementById('popup-title').textContent = data.label;
+
+  const imgContainer = document.getElementById('popup-imgs');
+  imgContainer.innerHTML = '';
+  data.images.forEach(src => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.onerror = function() { this.remove(); };
+    imgContainer.appendChild(img);
+  });
+
+  const ul = document.getElementById('popup-findings');
+  ul.innerHTML = '';
+  data.findings.forEach(f => {
+    const li = document.createElement('li');
+    li.innerHTML = f;
+    ul.appendChild(li);
+  });
+
+  document.getElementById('hotspot-popup').classList.add('open');
+
+  hotspotsRevealed.add(id);
+  document.getElementById('hs' + id).classList.add('revealed');
+  const leg = document.getElementById('hs-leg-' + id);
+  if (leg) leg.classList.add('done');
+
+  if (hotspotsRevealed.size >= 3) {
+    document.getElementById('inspect-continue').disabled = false;
+  }
+}
+
+function closeHotspot() {
+  document.getElementById('hotspot-popup').classList.remove('open');
+}
+function closeHotspotOverlay(e) {
+  if (e.target === document.getElementById('hotspot-popup')) closeHotspot();
+}
+
+// ════════════════════════════
+//  MULTI-SELECT (Stage 2)
+// ════════════════════════════
+function renderMotorOptions() {
+  const grid = document.getElementById('ms-grid');
+  grid.innerHTML = '';
+  MOTOR_OPTIONS.forEach(opt => {
+    const card = document.createElement('div');
+    card.className = 'ms-card';
+    card.id = 'ms-' + opt.id;
+    card.onclick = () => toggleMotorOption(opt.id);
+    card.innerHTML = `
+      <div class="ms-box" id="msbox-${opt.id}"></div>
+      <div class="ms-body">
+        <div class="ms-text">${opt.text}</div>
+        ${opt.feedback    ? `<div class="ms-feedback"     id="msfb-${opt.id}">${opt.feedback}</div>`    : ''}
+        ${opt.successNote ? `<div class="correct-feedback" id="mscf-${opt.id}">${opt.successNote}</div>` : ''}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function toggleMotorOption(id) {
+  if (msChecked) return;
+  const card = document.getElementById('ms-' + id);
+  const box  = document.getElementById('msbox-' + id);
+  if (card.classList.contains('selected')) {
+    card.classList.remove('selected'); box.textContent = '';
+  } else {
+    card.classList.add('selected'); box.textContent = '✓';
+  }
+}
+
+function checkMotorSelect() {
+  if (msChecked) return;
+  msChecked = true;
+  MOTOR_OPTIONS.forEach(opt => {
+    const card = document.getElementById('ms-' + opt.id);
+    const box  = document.getElementById('msbox-' + opt.id);
+    const fb   = document.getElementById('msfb-' + opt.id);
+    const cf   = document.getElementById('mscf-' + opt.id);
+    const sel  = card.classList.contains('selected');
+    card.classList.add('locked');
+    card.onclick = null;
+    if (opt.correct) {
+      card.classList.remove('selected'); card.classList.add('correct'); box.textContent = '✓';
+      if (cf) cf.classList.add('shown');
+    } else if (sel) {
+      card.classList.remove('selected'); card.classList.add('wrong'); box.textContent = '✕';
+      if (fb) fb.classList.add('shown');
+    }
+  });
+  document.getElementById('ms-result').classList.add('shown');
+  document.getElementById('ms-continue').disabled = false;
+}
+
+// ════════════════════════════
+//  DRAG-DROP — SHARED
+// ════════════════════════════
+function renderDragChips(stage, chipsData) {
+  const pool = document.getElementById(stage + '-pool');
+  pool.innerHTML = '';
+  const shuffled = [...chipsData].sort(() => Math.random() - 0.5);
+  shuffled.forEach(chip => pool.appendChild(makeChip(chip.id, chip.text, chip.correct)));
+}
+
+function makeChip(id, text, correct) {
+  const el = document.createElement('div');
+  el.className = 'chip';
+  el.id = 'chip-' + id;
+  el.textContent = text;
+  el.draggable = true;
+  el.dataset.correct = correct; // single zone string
+
+  el.addEventListener('dragstart', e => {
+    draggedChipId = id;
+    el.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  return el;
+}
+
+function zoneDragOver(e)  { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function zoneDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function zoneDrop(e, stage) {
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  if (!draggedChipId) return;
+  const chip = document.getElementById('chip-' + draggedChipId);
+  if (!chip || chip.classList.contains('correct')) { draggedChipId = null; return; }
+  e.currentTarget.appendChild(chip);
+  draggedChipId = null;
+}
+function poolDragOver(e)  { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function poolDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function poolDrop(e, stage) {
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  if (!draggedChipId) return;
+  const chip = document.getElementById('chip-' + draggedChipId);
+  if (chip && !chip.classList.contains('correct')) {
+    document.getElementById(stage + '-pool').appendChild(chip);
+  }
+  draggedChipId = null;
+}
+
+function checkDragDrop(stage) {
+  const zoneIds = stage === 'anatomy'
+    ? ['dz-cortex','dz-capsule']
+    : ['dz-dominant','dz-nondominant','dz-lcapsule'];
+
+  let wrongCount = 0, newCorrect = 0;
+
+  zoneIds.forEach(zid => {
+    const zone = document.getElementById(zid);
+    if (!zone) return;
+    const zoneKey = zone.dataset.zone;
+    zone.querySelectorAll('.chip').forEach(chip => {
+      if (chip.classList.contains('correct')) { newCorrect++; return; }
+      const accepted = chip.dataset.correct.split(','); // one or more zones
+      if (accepted.includes(zoneKey)) {
+        chip.classList.add('correct'); newCorrect++;
+      } else {
+        chip.classList.add('wrong'); chip.classList.add('shake'); wrongCount++;
+        setTimeout(() => {
+          chip.classList.remove('wrong','shake');
+          document.getElementById(stage + '-pool').appendChild(chip);
+        }, 900);
+      }
+    });
+  });
+
+  const poolRemaining = document.querySelectorAll(`#${stage}-pool .chip:not(.correct)`).length;
+  const resultEl = document.getElementById(stage + '-result');
+  resultEl.classList.add('shown');
+
+  if (wrongCount === 0 && poolRemaining === 0) {
+    resultEl.className = 'drag-result shown success';
+    if (stage === 'anatomy') {
+      resultEl.innerHTML = '✅ <strong>All correct!</strong> Great anatomical reasoning.';
+      document.getElementById('anatomy-continue').disabled = false;
+    } else {
+      resultEl.innerHTML = `✅ <strong>All correct!</strong><br><br>
+        Whilst both cortical strokes and lacunar strokes can produce the same sensorimotor deficits,
+        <strong>only cortical lesions carry their own clinical signatures</strong> — aphasia, neglect,
+        homonymous hemianopia, and higher sensory loss (graphaesthesia, stereognosis).
+        And crucially: hemianopia, graphaesthesia and stereognosis can occur with <em>either</em> cortex lesion —
+        they are not hemisphere-specific, just cortex-specific.`;
+      document.getElementById('clinical-continue').disabled = false;
+    }
+  } else {
+    resultEl.className = 'drag-result shown partial';
+    const msgs = [];
+    if (wrongCount > 0)    msgs.push(`${wrongCount} chip${wrongCount>1?'s':''} in the wrong column — bounced back!`);
+    if (poolRemaining > 0) msgs.push(`${poolRemaining} chip${poolRemaining>1?'s':''} still in the pool.`);
+    resultEl.textContent = msgs.join(' ') + ' Keep going!';
+  }
+}
+
+// ════════════════════════════
+//  SPEECH (Stage 5)
+// ════════════════════════════
+function revealSpeech() {
+  document.getElementById('speech-reveal').classList.add('shown');
+  document.getElementById('speech-btn').disabled = true;
+  document.getElementById('speech-continue').disabled = false;
+}
+
+// ════════════════════════════
+//  DIAGNOSIS (Stage 6)
+// ════════════════════════════
+function renderDiagnosisOptions() {
+  const container = document.getElementById('dx-options');
+  container.innerHTML = '';
+  DIAGNOSIS_OPTIONS.forEach(opt => {
+    const el = document.createElement('div');
+    el.className = 'dx-opt';
+    el.id = opt.id;
+    el.onclick = () => selectDiagnosis(opt.id, opt.correct);
+    el.innerHTML = `<div class="dx-letter">${opt.letter}</div><div>${opt.text}</div>`;
+    container.appendChild(el);
+  });
+}
+
+function selectDiagnosis(id, isCorrect) {
+  document.querySelectorAll('.dx-opt').forEach(el => { el.classList.add('answered'); el.onclick = null; });
+  const chosen = document.getElementById(id);
+  if (isCorrect) {
+    chosen.classList.add('correct');
+  } else {
+    chosen.classList.add('wrong');
+    DIAGNOSIS_OPTIONS.forEach(opt => { if (opt.correct) document.getElementById(opt.id).classList.add('correct'); });
+  }
+  document.getElementById('dx-explanation').classList.add('shown');
+  document.getElementById('dx-continue').disabled = false;
+}
+
+// ════════════════════════════
+//  CELEBRATION
+// ════════════════════════════
+function launchConfetti() {
+  const layer = document.getElementById('confetti-layer');
+  layer.innerHTML = '';
+  const colours = ['#0D9488','#14b8a6','#111111','#f59e0b','#34d399','#60a5fa','#f472b6','#a78bfa'];
+  for (let i = 0; i < 90; i++) {
+    const p = document.createElement('div');
+    p.className = 'conf-piece';
+    const sz = 7 + Math.random() * 9;
+    p.style.cssText = `left:${Math.random()*100}%;width:${sz}px;height:${sz*(0.4+Math.random()*0.6)}px;background:${colours[Math.floor(Math.random()*colours.length)]};animation-duration:${1.8+Math.random()*2.4}s;animation-delay:${Math.random()*1.5}s;opacity:${0.7+Math.random()*0.3};`;
+    layer.appendChild(p);
+  }
+}
+
+// ════════════════════════════
+//  FULL RESET
+// ════════════════════════════
+function fullReset() {
+  secondsLeft = 600;
+
+  // Hotspots
+  hotspotsRevealed.clear();
+  [1,2,3].forEach(n => {
+    document.getElementById('hs'+n)?.classList.remove('revealed');
+    document.getElementById('hs-leg-'+n)?.classList.remove('done');
+  });
+  document.getElementById('inspect-continue').disabled = true;
+
+  // Multi-select
+  msChecked = false;
+  renderMotorOptions();
+  document.getElementById('ms-result').classList.remove('shown');
+  document.getElementById('ms-continue').disabled = true;
+
+  // Anatomy drag-drop
+  ['dz-cortex','dz-capsule'].forEach(id => document.getElementById(id)?.querySelectorAll('.chip').forEach(c=>c.remove()));
+  document.getElementById('anatomy-result').classList.remove('shown');
+  document.getElementById('anatomy-continue').disabled = true;
+  renderDragChips('anatomy', ANATOMY_CHIPS);
+
+  // Clinical drag-drop
+  ['dz-dominant','dz-nondominant','dz-lcapsule'].forEach(id => document.getElementById(id)?.querySelectorAll('.chip').forEach(c=>c.remove()));
+  document.getElementById('clinical-result').classList.remove('shown');
+  document.getElementById('clinical-continue').disabled = true;
+  renderDragChips('clinical', CLINICAL_CHIPS);
+
+  // Speech
+  document.getElementById('speech-reveal').classList.remove('shown');
+  document.getElementById('speech-btn').disabled = false;
+  document.getElementById('speech-continue').disabled = true;
+
+  // Diagnosis
+  renderDiagnosisOptions();
+  document.getElementById('dx-explanation').classList.remove('shown');
+  document.getElementById('dx-continue').disabled = true;
+
+  // Progress dots
+  document.querySelectorAll('.prog-step').forEach(el => el.classList.remove('active','done'));
+}
+
+// ════════════════════════════
+//  KEYBOARD
+// ════════════════════════════
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHotspot(); });
+
+// ════════════════════════════
+//  BOOT
+// ════════════════════════════
+init();
+</script>
+</body>
+</html>

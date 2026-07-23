@@ -1,0 +1,27 @@
+DROP YOUR IMAGES HERE
+=====================
+The game references these files from this images/ folder.
+Placeholders are shown until the real images are added.
+
+PATIENT IMAGES (Stage 1 — Hover-Label)
+  case1-patient.png            Main patient figure with hotspot overlay
+  case1-patient_gait.png       Gait examination illustration
+
+POPUP IMAGES (Stage 1 — CN findings popup)
+  case1-popup-facial-droop.png   Photo/illustration of right facial droop
+  case1-popup-tongue-deviation.png  Photo/illustration of tongue deviation
+
+STAGE 2 — Motor Localisation
+  brain-detective.png          Decorative brain / detective image (displayed above the MCQ)
+  light-bulb.png               Small lightbulb icon (displayed in the result banner)
+
+CELEBRATION (Stage 7)
+  brain-trophy1.png            Trophy or celebration brain image
+
+Supported formats: PNG, JPG, GIF, MP4 (autoplay loop muted)
+Recommended sizes:
+  Patient figures:  ~220 x 440 px (portrait)
+  Gait figure:      ~180 x 380 px (portrait)
+  Popup images:     ~300 x 200 px (landscape)
+  brain-detective:  ~240 x 120 px (landscape)
+  brain-trophy1:    ~300 x 300 px
