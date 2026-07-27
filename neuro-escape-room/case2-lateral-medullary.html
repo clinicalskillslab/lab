@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lateral Medullary Games — Neuro Escape Room</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F5F4F0;color:#1C1C1E;min-height:100vh;line-height:1.5}
+.screen{display:none}.screen.active{display:block}
+.page-wrap{max-width:780px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+
+/* Typography */
+.module-tag{display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;background:#E1F5EE;color:#0F6E56;padding:4px 12px;border-radius:20px;margin-bottom:1.25rem}
+h1{font-size:30px;font-weight:700;line-height:1.2;margin-bottom:.5rem}
+h2{font-size:20px;font-weight:600;margin-bottom:.4rem}
+h3{font-size:15px;font-weight:600;margin-bottom:.25rem}
+p.lead{font-size:16px;color:#555;line-height:1.6}
+p.body{font-size:14px;color:#555;line-height:1.6}
+
+/* Buttons */
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:#534AB7;color:white;border:none;padding:12px 24px;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;transition:background .15s,opacity .15s}
+.btn-primary:hover{background:#4039A0}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.btn-reveal{display:inline-flex;align-items:center;gap:6px;background:white;color:#534AB7;border:1.5px solid #534AB7;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s;margin-top:1rem}
+.btn-reveal:hover{background:#F0EFFE}
+
+/* Step indicator */
+.step-indicator{display:flex;align-items:flex-start;margin:1.75rem 0 2rem}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative}
+.step-item:not(:last-child)::after{content:'';position:absolute;top:13px;left:calc(50% + 14px);width:calc(100% - 28px);height:2px;background:#E0DFF0;z-index:0}
+.step-item.done:not(:last-child)::after{background:#1D9E75}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;z-index:1;position:relative}
+.step-item.pending .step-dot{background:#EBEBEB;color:#AAA}
+.step-item.active .step-dot{background:#534AB7;color:white}
+.step-item.done .step-dot{background:#1D9E75;color:white}
+.step-label{font-size:10px;color:#AAA;text-transform:lowercase;letter-spacing:.02em;text-align:center}
+.step-item.active .step-label{color:#534AB7;font-weight:600}
+.step-item.done .step-label{color:#1D9E75}
+
+/* Timer */
+.timer-bar{display:flex;justify-content:flex-end;margin-bottom:.5rem}
+.timer-badge{display:inline-flex;align-items:center;gap:6px;background:white;border:1px solid #E5E5E5;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;color:#534AB7}
+
+/* Card */
+.card{background:white;border-radius:14px;border:.5px solid #E5E5E5;padding:1.5rem;margin-bottom:1rem}
+.card-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#534AB7;margin-bottom:.75rem}
+
+/* Intro text */
+.intro-text{font-size:14px;color:#555;line-height:1.65;margin-bottom:1.25rem}
+
+/* Pearl box */
+.pearl{margin-top:1rem;background:#F7F6FF;border-left:3px solid #534AB7;padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;color:#444;line-height:1.55}
+.pearl strong{color:#534AB7}
+
+/* Feedback */
+.feedback-box{margin-top:1rem;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.55;display:none}
+.feedback-box.show{display:block}
+.feedback-box.correct-fb{background:#EBF7F2;color:#0F6E56}
+.feedback-box.wrong-fb{background:#FDF2F2;color:#993C1D}
+
+/* ===== DRAG-DROP ===== */
+.chip-pool{display:flex;flex-wrap:wrap;gap:8px;min-height:50px;padding:12px;background:#F5F4F0;border-radius:10px;margin-bottom:1.5rem;border:1.5px dashed #DDD}
+.chip{display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:grab;user-select:none;transition:box-shadow .15s,opacity .15s;white-space:nowrap}
+.chip:active{cursor:grabbing;box-shadow:0 4px 16px rgba(0,0,0,.18);opacity:.9}
+.chip.black-chip{background:#1C1C1E;color:white}
+.chip.teal-chip{background:#0F6E56;color:white}
+.chip.label-chip{background:#534AB7;color:white}
+.chip.placed{opacity:.35;cursor:default;pointer-events:none}
+.chip.ghost{opacity:.5}
+
+.drop-col{border:2px dashed #D0CEEC;border-radius:10px;min-height:60px;padding:10px;transition:background .15s,border-color .15s;display:flex;flex-direction:column;gap:6px}
+.drop-col.drag-over{background:#EEF0FF;border-color:#534AB7}
+.drop-col.correct-zone{border-color:#1D9E75;background:#F2FAF6}
+.drop-col.wrong-zone{border-color:#E24B4A;background:#FFF0F0}
+
+.drop-col-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#534AB7;margin-bottom:6px}
+.drop-col-subheader{font-size:10px;color:#888;margin-bottom:4px}
+
+.cols-grid{display:grid;gap:10px;margin-bottom:1rem}
+.cols-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.cols-2{grid-template-columns:1fr 1fr}
+.cols-3{grid-template-columns:1fr 1fr 1fr}
+
+/* placed chip in drop zone */
+.placed-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:500;margin:2px;cursor:pointer;transition:all .15s}
+.placed-chip.black-chip{background:#1C1C1E;color:white}
+.placed-chip.teal-chip{background:#0F6E56;color:white}
+.placed-chip.label-chip{background:#534AB7;color:white}
+.placed-chip.correct-placed{border:2px solid #1D9E75}
+.placed-chip.wrong-placed{border:2px solid #E24B4A;animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* Stage 1 brainstem image drop zones */
+.bs-image-container{position:relative;display:inline-block;margin:0 auto 1rem;display:block;max-width:280px}
+.bs-image-container img{width:100%;display:block}
+.bs-hotspot{position:absolute;border:3px dashed #534AB7;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#534AB7;font-weight:600;transition:background .15s,border-color .15s;cursor:default;min-height:44px}
+.bs-hotspot.drag-over{background:rgba(83,74,183,.12);border-color:#534AB7;border-style:solid}
+.bs-hotspot.correct-zone{border-color:#1D9E75;background:rgba(29,158,117,.1);border-style:solid}
+.bs-hotspot.wrong-zone{border-color:#E24B4A;background:rgba(226,75,74,.1);border-style:solid}
+.bs-hotspot-label{font-size:11px;color:#888;text-align:center;padding:2px}
+
+/* ===== MCQ ===== */
+.mcq-options{display:flex;flex-direction:column;gap:8px;margin:1rem 0}
+.mcq-btn{width:100%;text-align:left;padding:12px 16px;border-radius:10px;border:1.5px solid #E0E0E0;background:#FAFAFA;font-size:14px;font-weight:500;cursor:pointer;transition:all .12s;color:#1C1C1E;line-height:1.4}
+.mcq-btn:hover:not(:disabled){border-color:#534AB7;color:#534AB7;background:#F0EFFE}
+.mcq-btn.correct-ans{border-color:#1D9E75;background:#EBF7F2;color:#0F6E56}
+.mcq-btn.wrong-ans{border-color:#E24B4A;background:#FFF0F0;color:#E24B4A}
+.mcq-btn:disabled{cursor:default}
+
+/* Multi-select */
+.multisel-btn{width:100%;text-align:left;padding:12px 16px;border-radius:10px;border:1.5px solid #E0E0E0;background:#FAFAFA;font-size:14px;font-weight:500;cursor:pointer;transition:all .12s;color:#1C1C1E;display:flex;align-items:center;gap:10px}
+.multisel-btn:hover:not(:disabled){border-color:#534AB7;color:#534AB7;background:#F0EFFE}
+.multisel-btn.selected{border-color:#534AB7;background:#534AB7;color:white}
+.multisel-btn.correct-ans{border-color:#1D9E75;background:#EBF7F2;color:#0F6E56}
+.multisel-btn.wrong-ans{border-color:#E24B4A;background:#FFF0F0;color:#E24B4A}
+.multisel-btn:disabled{cursor:default}
+.check-box{width:18px;height:18px;border-radius:4px;border:2px solid #888;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;background:white;color:transparent;transition:all .15s}
+.multisel-btn.selected .check-box{background:#534AB7;border-color:#534AB7;color:white}
+.multisel-btn.correct-ans .check-box{background:#1D9E75;border-color:#1D9E75;color:white}
+.multisel-btn.wrong-ans .check-box{background:#E24B4A;border-color:#E24B4A;color:white}
+
+/* Stage 7 MCQ cards */
+.syndrome-options{display:flex;flex-direction:column;gap:12px;margin:1rem 0}
+.syndrome-card{border:2px solid #E0E0E0;border-radius:12px;padding:14px;cursor:pointer;transition:all .15s;background:white}
+.syndrome-card:hover:not(.locked){border-color:#534AB7;background:#F8F7FF}
+.syndrome-card.selected{border-color:#534AB7;background:#F0EFFE}
+.syndrome-card.correct-ans{border-color:#1D9E75;background:#EBF7F2}
+.syndrome-card.wrong-ans{border-color:#E24B4A;background:#FFF0F0}
+.syndrome-card.locked{cursor:default}
+.syndrome-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#534AB7;margin-bottom:8px}
+.syndrome-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:start}
+.syn-cell{text-align:center}
+.syn-cell-head{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px;line-height:1.3}
+.syn-cell img{width:100%;max-width:64px;height:auto;border-radius:6px;display:block;margin:0 auto}
+.syn-cell-text{font-size:11px;color:#333;line-height:1.35;margin-top:3px}
+.horners-badge{font-size:10px;background:#FEF3C7;color:#92400E;border-radius:4px;padding:2px 5px;display:inline-block;margin-top:2px}
+.cerebellar-badge{font-size:10px;border-radius:4px;padding:2px 5px;display:inline-block;margin-top:2px}
+.cb-left{background:#E1F5EE;color:#0F6E56}
+.cb-right{background:#FEE2E2;color:#991B1B}
+
+/* Explanation box */
+.explanation{background:#F7F6FF;border-left:3px solid #534AB7;padding:12px 16px;border-radius:0 10px 10px 0;font-size:13px;color:#444;line-height:1.6;margin-top:1rem;display:none}
+.explanation.show{display:block}
+
+/* Score tracker */
+.score-tracker{background:white;border-radius:10px;border:.5px solid #E5E5E5;padding:10px 16px;display:inline-flex;gap:16px;font-size:13px;margin-bottom:1rem}
+.score-item{display:flex;align-items:center;gap:5px}
+.score-dot{width:8px;height:8px;border-radius:50%}
+.score-dot.green{background:#1D9E75}
+.score-dot.red{background:#E24B4A}
+
+/* Welcome screen */
+.welcome-hero{text-align:center;padding:2rem 0 1.5rem}
+.welcome-hero img{width:140px;margin:0 auto 1.5rem;display:block}
+.case-badge{display:inline-block;background:#534AB7;color:white;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:4px 14px;border-radius:20px;margin-bottom:1rem}
+
+/* Debrief */
+.debrief-hero{text-align:center;padding:1.5rem 0}
+.debrief-hero img{width:160px;margin:0 auto 1rem;display:block}
+.pearl-card{background:white;border-radius:12px;border:.5px solid #E5E5E5;padding:1rem 1.25rem;margin-bottom:.75rem}
+.pearl-card h3{font-size:14px;color:#534AB7;margin-bottom:.25rem}
+.pearl-card p{font-size:13px;color:#555;line-height:1.55}
+
+/* Summary box */
+.summary-box{background:#EBF7F2;border-radius:10px;padding:12px 16px;font-size:13px;color:#0F6E56;line-height:1.55;margin:1rem 0;display:none;border:1px solid #B8E8D8}
+.summary-box.show{display:block}
+
+/* Grid for stage 5 */
+.lateral-medial-grid{border-collapse:collapse;width:100%;margin:1rem 0}
+.lateral-medial-grid th{background:#534AB7;color:white;font-size:12px;font-weight:600;padding:8px 10px;text-align:center}
+.lateral-medial-grid th.row-header{background:#3D3480}
+.lateral-medial-grid td{border:1px solid #E0DEEE;padding:8px;vertical-align:top;min-height:50px}
+.lateral-medial-grid td.row-th{background:#F0EFFE;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#534AB7;text-align:center;vertical-align:middle}
+.grid-dropzone{min-height:44px;border-radius:8px;border:2px dashed #D0CEEC;padding:6px;display:flex;flex-wrap:wrap;gap:4px;transition:background .15s,border-color .15s}
+.grid-dropzone.drag-over{background:#EEF0FF;border-color:#534AB7;border-style:solid}
+.grid-dropzone.correct-zone{border-color:#1D9E75;background:#F2FAF6;border-style:solid}
+
+/* confetti */
+.confetti-wrap{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti-piece{position:absolute;width:10px;height:10px;border-radius:2px;animation:confettiFall linear forwards}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* Responsive */
+@media(max-width:600px){
+  .cols-4{grid-template-columns:1fr 1fr}
+  .syndrome-grid{grid-template-columns:repeat(3,1fr)}
+  h1{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- TIMER (global) -->
+<div style="position:sticky;top:0;z-index:100;background:#F5F4F0;border-bottom:1px solid #E8E7E3;padding:8px 1.5rem">
+  <div style="max-width:780px;margin:0 auto;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;font-weight:600;color:#534AB7">🧠 Lateral Medullary Games</span>
+    <span class="timer-badge">⏱ <span id="timerDisplay">15:00</span></span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 0: WELCOME -->
+<!-- ============================================================ -->
+<div class="screen active" id="screen-0">
+  <div class="page-wrap">
+    <div class="welcome-hero">
+      <img src="images/brain-detective.png" alt="Brain Detective" onerror="this.style.display='none'">
+      <div class="case-badge">Case 2</div>
+      <h1 style="margin-bottom:.75rem">Lateral Medullary Games</h1>
+      <p class="lead" style="max-width:520px;margin:0 auto 2rem">Welcome to your next escape room. By completing this room you will become a brainstem ninja. We'll start by grounding ourselves in a brainstem roadmap and then matching the clinical signs to the lesions.</p>
+      <button class="btn-primary" onclick="startGame()">🚪 Enter the Room — Start Timer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 1: BRAINSTEM BUILDING BLOCKS (image drop) -->
+<!-- ============================================================ -->
+<div class="screen" id="screen-1">
+  <div class="page-wrap">
+    <div class="step-indicator" id="steps-1"></div>
+    <div class="module-tag">Stage 1 · Drag &amp; Drop</div>
+    <h1>Brainstem Building Blocks</h1>
+    <p class="lead" style="margin:.5rem 0 1.5rem">The brainstem has three components — match the brainstem area with the correct label.</p>
+
+    <div class="card">
+      <p class="card-label">Drag each label onto its correct region</p>
+      <div style="display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap">
+        <!-- Brainstem image with hotspots -->
+        <div class="bs-image-container" style="flex-shrink:0;width:240px">
+          <img src="images/case2-brainstem-anatomy.png" alt="Brainstem anatomy" id="bsImg1" style="width:100%;border-radius:8px">
+          <!-- Hotspots positioned over regions 1,2,3 in the image -->
+          <!-- Approx positions based on image layout: midbrain top ~20-35%, pons ~38-58%, medulla ~60-78% -->
+          <!-- Hotspots: image is 600×900px. Brain cortex fills top ~35%.
+               Midbrain ≈ 35–46%, Pons ≈ 46–60%, Medulla ≈ 61–76% -->
+          <div class="bs-hotspot" id="drop-midbrain" data-answer="Midbrain"
+               style="top:35%;left:32%;width:38%;height:11%"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropOnHotspot(event,'drop-midbrain')">
+            <span class="bs-hotspot-label" id="hs-label-midbrain">1</span>
+          </div>
+          <div class="bs-hotspot" id="drop-pons" data-answer="Pons"
+               style="top:47%;left:24%;width:54%;height:13%"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropOnHotspot(event,'drop-pons')">
+            <span class="bs-hotspot-label" id="hs-label-pons">2</span>
+          </div>
+          <div class="bs-hotspot" id="drop-medulla" data-answer="Medulla"
+               style="top:61%;left:32%;width:38%;height:14%"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropOnHotspot(event,'drop-medulla')">
+            <span class="bs-hotspot-label" id="hs-label-medulla">3</span>
+          </div>
+        </div>
+        <!-- Chip pool -->
+        <div style="flex:1;min-width:160px">
+          <p style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Labels — drag onto diagram</p>
+          <div class="chip-pool" id="pool-1">
+            <div class="chip label-chip" id="chip-Midbrain" draggable="true"
+                 ondragstart="dragStart(event,'chip-Midbrain','Midbrain','label-chip')">Midbrain</div>
+            <div class="chip label-chip" id="chip-Pons" draggable="true"
+                 ondragstart="dragStart(event,'chip-Pons','Pons','label-chip')">Pons</div>
+            <div class="chip label-chip" id="chip-Medulla" draggable="true"
+                 ondragstart="dragStart(event,'chip-Medulla','Medulla','label-chip')">Medulla</div>
+          </div>
+          <div class="feedback-box correct-fb" id="fb-s1"></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-s1" disabled onclick="goTo(2)">Continue to next stage →</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 2: CN NUCLEI PLACEMENT (4-column drag-drop) -->
+<!-- ============================================================ -->
+<div class="screen" id="screen-2">
+  <div class="page-wrap">
+    <div class="step-indicator" id="steps-2"></div>
+    <div class="module-tag">Stage 2 · Drag &amp; Drop</div>
+    <h1>Brainstem Building Blocks</h1>
+    <p class="lead" style="margin:.5rem 0 1.25rem">Okay now we have the brainstem tiers sorted — place the cranial nerve nuclei in their correct brainstem location.</p>
+
+    <div class="card">
+      <p class="card-label">Drag each CN from the pool into its brainstem level</p>
+      <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap">
+
+        <!-- LEFT: chip pool -->
+        <div style="flex:1;min-width:160px">
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#888;margin-bottom:8px">CN pool — drag into tower</p>
+          <div class="chip-pool" id="pool-2" style="flex-direction:column;gap:6px;min-height:300px">
+            <!-- chips injected by JS -->
+          </div>
+        </div>
+
+        <!-- RIGHT: brainstem tower (top = cortex/none, bottom = medulla) -->
+        <div style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:4px">
+
+          <!-- Level 0: Not in brainstem -->
+          <div style="border-radius:10px;background:#F5F4F0;border:2px dashed #CCC;padding:8px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:6px;text-align:center">
+              🧠 Not in Brainstem<br><span style="font-weight:400;font-size:9px">(hemispheric)</span>
+            </div>
+            <div class="drop-col" id="zone-hemi" style="background:white;border-color:#CCC;flex-direction:row;flex-wrap:wrap"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="dropChip(event,'zone-hemi')"></div>
+          </div>
+
+          <!-- connector arrow -->
+          <div style="text-align:center;font-size:18px;color:#CCC;line-height:1">↓</div>
+
+          <!-- Level 1: Midbrain -->
+          <div style="border-radius:10px;background:#FDF6EE;border:2px dashed #D4955A;padding:8px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#A0522D;margin-bottom:6px;text-align:center">Midbrain</div>
+            <div class="drop-col" id="zone-mid" style="background:white;border-color:#D4955A;flex-direction:row;flex-wrap:wrap"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="dropChip(event,'zone-mid')"></div>
+          </div>
+
+          <!-- connector arrow -->
+          <div style="text-align:center;font-size:18px;color:#CCC;line-height:1">↓</div>
+
+          <!-- Level 2: Pons -->
+          <div style="border-radius:10px;background:#FDF0F6;border:2px dashed #C078A0;padding:8px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#B06090;margin-bottom:6px;text-align:center">Pons</div>
+            <div class="drop-col" id="zone-pons" style="background:white;border-color:#C078A0;flex-direction:row;flex-wrap:wrap"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="dropChip(event,'zone-pons')"></div>
+          </div>
+
+          <!-- connector arrow -->
+          <div style="text-align:center;font-size:18px;color:#CCC;line-height:1">↓</div>
+
+          <!-- Level 3: Medulla -->
+          <div style="border-radius:10px;background:#F0EFFE;border:2px dashed #534AB7;padding:8px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#534AB7;margin-bottom:6px;text-align:center">Medulla</div>
+            <div class="drop-col" id="zone-med" style="background:white;border-color:#534AB7;flex-direction:row;flex-wrap:wrap"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="dropChip(event,'zone-med')"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="score-tracker" id="score-2" style="margin-top:1rem">
+        <div class="score-item"><div class="score-dot green"></div><span id="correct-2">0</span> correct</div>
+        <div class="score-item"><div class="score-dot red"></div><span id="wrong-2">0</span> wrong</div>
+        <span style="color:#888;font-size:12px">of 12 cranial nerves</span>
+      </div>
+    </div>
+
+    <div class="summary-box" id="summary-2">
+      Great — now we have the levels! Let's touch on some very important concepts and caveats that you need to know to solve brainstem problems.
+    </div>
+
+    <button class="btn-primary" id="btn-s2" disabled onclick="goTo(3)">Progress to Cranial Nerve Pearls →</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 3: MCQ — CN IPSILATERAL -->
+<!-- ============================================================ -->
+<div class="screen" id="screen-3">
+  <div class="page-wrap">
+    <div class="step-indicator" id="steps-3"></div>
+    <div class="module-tag">Stage 3 · MCQ</div>
+    <h1>Cranial Nerve Pearl MCQs</h1>
+    <p class="lead" style="margin:.5rem 0 1.5rem">Which of the following is true regarding lesions which affect cranial nerve nuclei in the brainstem?</p>
+
+    <div class="card">
+      <div class="mcq-options" id="mcq-3">
+        <button class="mcq-btn" onclick="answerMCQ(3,this,false,'A lesion of a cranial nerve nucleus in the brainstem will result in ipsilateral CN signs')">
+          Cranial nerve signs are contralateral to the brainstem lesion
+        </button>
+        <button class="mcq-btn" onclick="answerMCQ(3,this,false,'A lesion of a cranial nerve nucleus in the brainstem will result in ipsilateral CN signs')">
+          Cranial nerve signs are ipsilateral or contralateral depending on the nerves affected
+        </button>
+        <button class="mcq-btn" onclick="answerMCQ(3,this,true,'')">
+          Cranial nerve signs are ipsilateral to the brainstem lesion
+        </button>
+      </div>
+      <div class="explanation" id="exp-3">
+        <strong>Cranial Nerve Signs are IPSILATERAL!</strong> Just to be clear, we are talking about the nucleus of cranial nerves — not the tracts running up and down the brainstem, which we will come to shortly!
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-s3" disabled onclick="goTo(4)">Proceed to next pearl →</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 4: MCQ — CN XI -->
+<!-- ============================================================ -->
+<div class="screen" id="screen-4">
+  <div class="page-wrap">
+    <div class="step-indicator" id="steps-4"></div>
+    <div class="module-tag">Stage 4 · MCQ</div>
+    <h1>Cranial Nerve Pearl MCQs</h1>
+    <p class="lead" style="margin:.5rem 0 1.5rem">Which of the following cranial nerves would be impacted by a lesion in the cervical spinal cord as opposed to the brainstem?</p>
+
+    <div class="card">
+      <div class="mcq-options" id="mcq-4">
+        <button class="mcq-btn" onclick="answerMCQ(4,this,false,'CN 9, 10, 11 and 12 are all in the medulla. But CN 11 function (SCM and trapezius) localises to the cervical spinal cord — brainstem lesions don\'t cause clinical CN 11 palsy.')">CN IX</button>
+        <button class="mcq-btn" onclick="answerMCQ(4,this,false,'CN 9, 10, 11 and 12 are all in the medulla. But CN 11 function (SCM and trapezius) localises to the cervical spinal cord — brainstem lesions don\'t cause clinical CN 11 palsy.')">CN X</button>
+        <button class="mcq-btn" onclick="answerMCQ(4,this,true,'')">CN XI</button>
+        <button class="mcq-btn" onclick="answerMCQ(4,this,false,'CN 9, 10, 11 and 12 are all in the medulla. But CN 11 function (SCM and trapezius) localises to the cervical spinal cord — brainstem lesions don\'t cause clinical CN 11 palsy.')">CN XII</button>
+      </div>
+      <div class="explanation" id="exp-4">
+        CNs 9, 10, 11 and 12 are located in the medulla. Here CN 11 joins forces with the vagus nerve. However, the function we assess on examination — weakness of sternocleidomastoid and trapezius — localises to the <strong>cervical spinal cord</strong>. So brainstem medullary lesions don't tend to cause a clinical CN 11 palsy.
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-s4" disabled onclick="goTo(5)">Proceed to next pearl →</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 5: LATERAL VS MEDIAL (grid drag-drop) -->
+<!-- ============================================================ -->
+<div class="screen" id="screen-5">
+  <div class="page-wrap">
+    <div class="step-indicator" id="steps-5"></div>
+    <div class="module-tag">Stage 5 · Drag &amp; Drop</div>
+    <h1>Lateral vs Medial Brainstem</h1>
+    <p class="intro-text">In the brainstem there are two main structures for our clinical skills — the cranial nerve nuclei and the tracts that run up and down. We've covered the levels of CN nuclei, but we also need to know whether these are located <strong>medially</strong> or <strong>laterally</strong>.</p>
+    <p class="intro-text">Drag the cranial nerves and tracts to their correct location:</p>
+
+    <div class="card">
+      <p class="card-label">Chip pool</p>
+      <div class="chip-pool" id="pool-5"><!-- chips injected by JS --></div>
+
+      <div style="overflow-x:auto">
+        <table class="lateral-medial-grid">
+          <thead>
+            <tr>
+              <th class="row-header" style="width:80px"></th>
+              <th colspan="1">Lateral</th>
+              <th colspan="1">Medial</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-th">Midbrain</td>
+              <td><div class="grid-dropzone" id="gz-mid-lat" data-zone="mid-lat"
+                        ondragover="event.preventDefault();this.classList.add('drag-over')"
+                        ondragleave="this.classList.remove('drag-over')"
+                        ondrop="dropGrid(event,'gz-mid-lat')"></div></td>
+              <td><div class="grid-dropzone" id="gz-mid-med" data-zone="mid-med"
+                        ondragover="event.preventDefault();this.classList.add('drag-over')"
+                        ondragleave="this.classList.remove('drag-over')"
+                        ondrop="dropGrid(event,'gz-mid-med')"></div></td>
+            </tr>
+            <tr>
+              <td class="row-th">Pons</td>
+              <td><div class="grid-dropzone" id="gz-pons-lat" data-zone="pons-lat"
+                        ondragover="event.preventDefault();this.classList.add('drag-over')"
+                        ondragleave="this.classList.remove('drag-over')"
+                        ondrop="dropGrid(event,'gz-pons-lat')"></div></td>
+              <td><div class="grid-dropzone" id="gz-pons-med" data-zone="pons-med"
+                        ondragover="event.preventDefault();this.classList.add('drag-over')"
+                        ondragleave="this.classList.remove('drag-over')"
+                        ondrop="dropGrid(event,'gz-pons-med')"></div></td>
+            </tr>
+            <tr>
+              <td class="row-th">Medulla</td>
+              <td><div class="grid-dropzone" id="gz-med-lat" data-zone="med-lat"
+                        ondragover="event.preventDefault();this.classList.add('drag-over')"
+                        ondragleave="this.classList.remove('drag-over')"
+                        ondrop="dropGrid(event,'gz-med-lat')"></div></td>
+              <td><div class="grid-dropzone" id="gz-med-med" data-zone="med-med"
+                        ondragover="event.preventDefault();this.classList.add('drag-over')"
+                        ondragleave="this.classList.remove('drag-over')"
+                        ondrop="dropGrid(event,'gz-med-med')"></div></td>
+            </tr>
+            <!-- Tract row spans all levels -->
+            <tr>
+              <td class="row-th">Tracts<br><span style="font-size:10px;font-weight:400">(all levels)</span></td>
+              <td><div class="grid-dropzone" id="gz-tract-lat" data-zone="tract-lat"
+                        ondragover="event.preventDefault();this.classList.add('drag-over')"
+                        ondragleave="this.classList.remove('drag-over')"
+                        ondrop="dropGrid(event,'gz-tract-lat')"></div></td>
+              <td><div class="grid-dropzone" id="gz-tract-med" data-zone="tract-med"
+                        ondragover="event.preventDefault();this.classList.add('drag-over')"
+                        ondragleave="this.classList.remove('drag-over')"
+                        ondrop="dropGrid(event,'gz-tract-med')"></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="score-tracker" id="score-5" style="margin-top:1rem">
+        <div class="score-item"><div class="score-dot green"></div><span id="correct-5">0</span> correct</div>
+        <div class="score-item"><div class="score-dot red"></div><span id="wrong-5">0</span> wrong</div>
+        <span style="color:#888;font-size:12px">of 16 items</span>
+      </div>
+    </div>
+
+    <div class="summary-box" id="summary-5">
+      📸 <strong>Memory tricks:</strong> Medial CNs control the eyes and tongue — things in the middle of the face. CNs that divide easily by 12 (III, IV, VI, XII) are medial! For tracts: <strong>M = Medial = Movement</strong> (motor, proprioception). The <strong>S tracts</strong> (Spinothalamic, Spinocerebellar, Spinal Trigeminal, Sympathetic) run Sideways = Lateral. Take a screenshot of the completed diagram!
+    </div>
+
+    <button class="btn-primary" id="btn-s5" disabled onclick="goTo(6)">Continue to clinical puzzles →</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 6: MULTI-SELECT — DECUSSATION -->
+<!-- ============================================================ -->
+<div class="screen" id="screen-6">
+  <div class="page-wrap">
+    <div class="step-indicator" id="steps-6"></div>
+    <div class="module-tag">Stage 6 · Multi-Select</div>
+    <h1>Decussation and the Brainstem</h1>
+    <p class="lead" style="margin:.5rem 0 1rem">The ascending and descending tracts have particular points of crossing over (decussation) which are important for our clinical problem solving.</p>
+    <p class="lead" style="margin-bottom:1.5rem"><strong>Which two tracts crossover in the medulla of the brainstem?</strong> Select all that apply, then check.</p>
+
+    <div class="card">
+      <div id="mcq-6" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
+        <button class="multisel-btn" id="ms-cst" onclick="toggleMultiSel(this)">
+          <span class="check-box" id="cb-cst">✓</span>Corticospinal Tract (motor)
+        </button>
+        <button class="multisel-btn" id="ms-stt" onclick="toggleMultiSel(this)">
+          <span class="check-box" id="cb-stt">✓</span>Spinothalamic Tract (pain and temperature)
+        </button>
+        <button class="multisel-btn" id="ms-dc" onclick="toggleMultiSel(this)">
+          <span class="check-box" id="cb-dc">✓</span>Dorsal Column (vibration and proprioception)
+        </button>
+        <button class="multisel-btn" id="ms-sc" onclick="toggleMultiSel(this)">
+          <span class="check-box" id="cb-sc">✓</span>Spinocerebellar Tract
+        </button>
+      </div>
+
+      <button class="btn-primary" id="check-6-btn" onclick="checkMultiSel6()" style="font-size:13px;padding:10px 20px">Check answers</button>
+
+      <div class="explanation" id="exp-6">
+        <strong>Lock that in!</strong> The <strong>Corticospinal Tract</strong> (motor) and <strong>Dorsal Column</strong> (vibration and proprioception) both decussate in the medulla. The spinothalamic fibres (pain and temperature) cross a couple of segments up from where they enter the spinal cord — so by the time they reach the brainstem they are already crossed, carrying signals from the contralateral body.
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-s6" disabled onclick="goTo(7)">Identify the clinical signs →</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ============================================================ -->
+<!-- SCREEN 7: HORNER'S SYNDROME -->
+<!-- ============================================================ -->
+<div class="screen" id="screen-7">
+  <div class="page-wrap">
+    <div class="step-indicator" id="steps-7"></div>
+    <div class="module-tag">Stage 7 · Horner's Syndrome</div>
+    <h1>What is Horner's Syndrome?</h1>
+    <p class="lead" style="margin:.5rem 0 1rem">You placed the sympathetic tract in the lateral brainstem in Stage 5 — a lesion here will lead to Horner's syndrome. But what does that actually mean?</p>
+    <p class="lead" style="margin-bottom:1.5rem">Let's make sure we know the clinical features — not just for the neuro exam, but for the respiratory and thyroid exams too!</p>
+
+    <!-- Horner's image — no caption that gives the answer away -->
+    <div class="card" style="text-align:center;margin-bottom:1.25rem">
+      <p class="card-label">What do you notice about this patient's eyes?</p>
+      <img src="images/left-horners-syndrome.png" alt="Patient eye examination" style="max-width:100%;width:440px;border-radius:10px;margin:0 auto;display:block">
+    </div>
+
+    <!-- MCQ A: multi-select features -->
+    <div class="card" id="card-horners-A">
+      <p class="card-label">Part A — Tick all that apply</p>
+      <p style="font-size:15px;font-weight:600;color:#1C1C1E;margin-bottom:1rem">Which of the following are features of Horner's syndrome?</p>
+      <div id="mcq-horners" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
+        <button class="multisel-btn" id="hms-miosis"     onclick="toggleMultiSel(this)"><span class="check-box">✓</span>Miosis — constricted pupil</button>
+        <button class="multisel-btn" id="hms-mydriasis"  onclick="toggleMultiSel(this)"><span class="check-box">✓</span>Mydriasis — dilated pupil</button>
+        <button class="multisel-btn" id="hms-ptosis"     onclick="toggleMultiSel(this)"><span class="check-box">✓</span>Ptosis — drooping upper eyelid</button>
+        <button class="multisel-btn" id="hms-diplopia"   onclick="toggleMultiSel(this)"><span class="check-box">✓</span>Diplopia — double vision</button>
+        <button class="multisel-btn" id="hms-anhidrosis" onclick="toggleMultiSel(this)"><span class="check-box">✓</span>Anhidrosis — reduced sweating on the face</button>
+      </div>
+      <button class="btn-primary" id="check-horners-btn" onclick="checkHorners()" style="font-size:13px;padding:10px 20px">Check answers</button>
+      <div class="explanation" id="exp-horners-A">
+        <strong>Horner's syndrome = Miosis + Ptosis + Anhidrosis</strong> (on the same side as the lesion).<br><br>
+        The sympathetic nervous system controls pupil dilation, eyelid elevation and sweating. Damage = the opposite of all three — constriction, drooping, dryness.<br><br>
+        <em>Diplopia is not a feature</em> — eye movements are controlled by CN III, IV and VI, not the sympathetic tract. <em>Mydriasis is the opposite</em> — that's sympathetic over-activity (or parasympathetic failure).
+      </div>
+    </div>
+
+    <!-- MCQ B: laterality — revealed after Part A checked -->
+    <div class="card" id="card-horners-B" style="display:none">
+      <p class="card-label">Part B — Localisation</p>
+      <p style="font-size:15px;font-weight:600;color:#1C1C1E;margin-bottom:1rem">In a <strong>LEFT</strong> lateral medullary lesion, the sympathetic tract is damaged. On which side would Horner's syndrome appear?</p>
+      <div class="mcq-options" id="mcq-horners-B">
+        <button class="mcq-btn" onclick="answerHornersB(this, true)">
+          Left — ipsilateral to the lesion
+        </button>
+        <button class="mcq-btn" onclick="answerHornersB(this, false)">
+          Right — contralateral to the lesion
+        </button>
+      </div>
+      <div class="explanation" id="exp-horners-B">
+        <strong>Ipsilateral — always!</strong> The descending sympathetic fibres travel through the lateral brainstem <em>without crossing</em> at this level. A left-sided lesion damages left-sided sympathetic fibres → left-sided Horner's. This is the same rule as cranial nerve nuclei: lateral brainstem structures produce ipsilateral signs.
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-s7" disabled onclick="goTo(8)">Identify the clinical signs →</button>
+  </div>
+</div>
+
+<!-- SCREEN 8: LATERAL MEDULLARY SYNDROME MCQ -->
+<!-- ============================================================ -->
+<div class="screen" id="screen-8">
+  <div class="page-wrap">
+    <div class="step-indicator" id="steps-8"></div>
+    <div class="module-tag">Stage 8 · Clinical Diagnosis</div>
+    <h1>Lateral Medullary Syndrome</h1>
+    <p class="lead" style="margin:.5rem 0 1rem">Using everything you've learned — which of these represents a <strong>LEFT sided</strong> lateral medullary syndrome?</p>
+    <p class="body" style="margin-bottom:1.5rem;color:#777">Each option shows the same six examination findings. Pick the one that fits a left-sided lateral medullary lesion.</p>
+
+    <!-- Column headers -->
+    <div style="display:grid;grid-template-columns:36px repeat(6,1fr);gap:6px;margin-bottom:6px;padding:0 2px">
+      <div></div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;text-align:center">Uvula<br>(CN9/10)</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;text-align:center">Sensory<br>Body</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;text-align:center">Right Eye</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;text-align:center">Left Eye</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;text-align:center">Cerebellar Signs</div>
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;text-align:center">Motor &amp; CN12</div>
+    </div>
+
+    <div class="syndrome-options" id="syndrome-opts">
+
+      <!-- Option A: wrong uvula (normal) — eliminated at step 1 -->
+      <div class="syndrome-card" id="opt-A" onclick="answerSyndrome('A')">
+        <div style="display:grid;grid-template-columns:36px repeat(6,1fr);gap:6px;align-items:center">
+          <div style="font-size:14px;font-weight:700;color:#534AB7">A</div>
+          <div style="text-align:center"><img src="images/uvula-normal.png" alt="Normal uvula" style="width:90px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/Crossed-sensory-deficit-teal-left-lateral-medullary.png" alt="Left crossed sensory" style="width:52px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Normal" style="width:52px;border-radius:6px"><div style="font-size:10px;color:#888;margin-top:2px">Normal R</div></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Left Horner's" style="width:52px;border-radius:6px"><div class="horners-badge">Horner's L</div></div>
+          <div style="text-align:center"><span class="cerebellar-badge cb-left">Left</span></div>
+          <div style="text-align:center;font-size:11px;color:#333">No tongue dev.<br>Normal power and tone of upper and lower limbs bilaterally</div>
+        </div>
+      </div>
+
+      <!-- Option B: wrong uvula (deviated left) — eliminated at step 1 -->
+      <div class="syndrome-card" id="opt-B" onclick="answerSyndrome('B')">
+        <div style="display:grid;grid-template-columns:36px repeat(6,1fr);gap:6px;align-items:center">
+          <div style="font-size:14px;font-weight:700;color:#534AB7">B</div>
+          <div style="text-align:center"><img src="images/uvular-deviation-left.png" alt="Uvula left" style="width:90px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/Crossed-sensory-deficit-teal-left-lateral-medullary.png" alt="Left crossed sensory" style="width:52px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Normal" style="width:52px;border-radius:6px"><div style="font-size:10px;color:#888;margin-top:2px">Normal R</div></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Left Horner's" style="width:52px;border-radius:6px"><div class="horners-badge">Horner's L</div></div>
+          <div style="text-align:center"><span class="cerebellar-badge cb-left">Left</span></div>
+          <div style="text-align:center;font-size:11px;color:#333">No tongue dev.<br>Normal power and tone of upper and lower limbs bilaterally</div>
+        </div>
+      </div>
+
+      <!-- Option C: right uvula ✓ but wrong sensory + right Horner's + right cerebellar — eliminated at step 2 -->
+      <div class="syndrome-card" id="opt-C" onclick="answerSyndrome('C')">
+        <div style="display:grid;grid-template-columns:36px repeat(6,1fr);gap:6px;align-items:center">
+          <div style="font-size:14px;font-weight:700;color:#534AB7">C</div>
+          <div style="text-align:center"><img src="images/uvular-deviation-right.png" alt="Uvula right" style="width:90px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/Crossed-sensory-deficit-teal-right-lateral-medullary..png" alt="Right crossed sensory" style="width:52px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Right Horner's" style="width:52px;border-radius:6px"><div class="horners-badge">Horner's R</div></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Normal" style="width:52px;border-radius:6px"><div style="font-size:10px;color:#888;margin-top:2px">Normal L</div></div>
+          <div style="text-align:center"><span class="cerebellar-badge cb-right">Right</span></div>
+          <div style="text-align:center;font-size:11px;color:#333">No tongue dev.<br>Normal power and tone of upper and lower limbs bilaterally</div>
+        </div>
+      </div>
+
+      <!-- Option D: right uvula ✓, correct sensory ✓, but wrong Horner's (right) + wrong cerebellar (right) — eliminated at step 3 -->
+      <div class="syndrome-card" id="opt-D" onclick="answerSyndrome('D')">
+        <div style="display:grid;grid-template-columns:36px repeat(6,1fr);gap:6px;align-items:center">
+          <div style="font-size:14px;font-weight:700;color:#534AB7">D</div>
+          <div style="text-align:center"><img src="images/uvular-deviation-right.png" alt="Uvula right" style="width:90px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/Crossed-sensory-deficit-teal-left-lateral-medullary.png" alt="Left crossed sensory" style="width:52px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Right Horner's" style="width:52px;border-radius:6px"><div class="horners-badge">Horner's R</div></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Normal" style="width:52px;border-radius:6px"><div style="font-size:10px;color:#888;margin-top:2px">Normal L</div></div>
+          <div style="text-align:center"><span class="cerebellar-badge cb-right">Right</span></div>
+          <div style="text-align:center;font-size:11px;color:#333">No tongue dev.<br>Normal power and tone of upper and lower limbs bilaterally</div>
+        </div>
+      </div>
+
+      <!-- Option E: right uvula ✓, correct sensory ✓, left Horner's ✓, left cerebellar ✓, but hemiparesis — eliminated at step 4 -->
+      <div class="syndrome-card" id="opt-E" onclick="answerSyndrome('E')">
+        <div style="display:grid;grid-template-columns:36px repeat(6,1fr);gap:6px;align-items:center">
+          <div style="font-size:14px;font-weight:700;color:#534AB7">E</div>
+          <div style="text-align:center"><img src="images/uvular-deviation-right.png" alt="Uvula right" style="width:90px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/Crossed-sensory-deficit-teal-left-lateral-medullary.png" alt="Left crossed sensory" style="width:52px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Normal" style="width:52px;border-radius:6px"><div style="font-size:10px;color:#888;margin-top:2px">Normal R</div></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Left Horner's" style="width:52px;border-radius:6px"><div class="horners-badge">Horner's L</div></div>
+          <div style="text-align:center"><span class="cerebellar-badge cb-left">Left</span></div>
+          <div style="text-align:center;font-size:11px;color:#333">No tongue dev.<br><span style="color:#E24B4A;font-weight:600">Right sided hemiparesis</span></div>
+        </div>
+      </div>
+
+      <!-- Option F — CORRECT: all findings consistent with left LMS -->
+      <div class="syndrome-card" id="opt-F" onclick="answerSyndrome('F')">
+        <div style="display:grid;grid-template-columns:36px repeat(6,1fr);gap:6px;align-items:center">
+          <div style="font-size:14px;font-weight:700;color:#534AB7">F</div>
+          <div style="text-align:center"><img src="images/uvular-deviation-right.png" alt="Uvula right" style="width:90px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/Crossed-sensory-deficit-teal-left-lateral-medullary.png" alt="Left crossed sensory" style="width:52px;border-radius:6px"></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Normal" style="width:52px;border-radius:6px"><div style="font-size:10px;color:#888;margin-top:2px">Normal R</div></div>
+          <div style="text-align:center"><img src="images/eyes-normal.png" alt="Left Horner's" style="width:52px;border-radius:6px"><div class="horners-badge">Horner's L</div></div>
+          <div style="text-align:center"><span class="cerebellar-badge cb-left">Left</span></div>
+          <div style="text-align:center;font-size:11px;color:#333">No tongue dev.<br>Normal power and tone of upper and lower limbs bilaterally</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="explanation" id="exp-8">
+      <strong>Well done!</strong> Left lateral medullary syndrome causes:
+      <ul style="margin-top:.5rem;margin-left:1.2rem;font-size:13px;line-height:1.7">
+        <li><strong>Uvula deviation right</strong> — the right palate elevates normally and pulls the uvula toward it (left palate weak)</li>
+        <li><strong>Left face pain/temp loss</strong> (ipsilateral CN5 tract) + <strong>right body pain/temp loss</strong> (spinothalamic already crossed before entering medulla)</li>
+        <li><strong>Left Horner's syndrome</strong> — ipsilateral miosis and ptosis (sympathetic tract in lateral medulla)</li>
+        <li><strong>Left cerebellar signs</strong> — ipsilateral (inferior cerebellar peduncle affected)</li>
+        <li><strong>No tongue deviation, no motor weakness</strong> — CN XII and corticospinal tract are medial, not affected</li>
+      </ul>
+    </div>
+
+    <button class="btn-primary" id="btn-s8" disabled onclick="goTo(9)">Receive Brainstem Ninja Crown! 🥷 →</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SCREEN 9: DEBRIEF -->
+<!-- ============================================================ -->
+<div class="screen" id="screen-9">
+  <div class="page-wrap">
+    <div class="debrief-hero">
+      <img src="images/brain-sunglasses.png" alt="Brain with sunglasses" onerror="this.style.display='none'">
+      <h1 style="margin-bottom:.5rem">You Made It! 🥷</h1>
+      <p class="lead" style="max-width:500px;margin:0 auto">Well done — you have officially bossed the lateral medullary syndrome and become a brainstem ninja.</p>
+    </div>
+
+    <div class="card" style="background:#F7F6FF;border-color:#C8C4E8;text-align:center;margin-bottom:1.5rem">
+      <p style="font-size:13px;color:#666;margin-bottom:.25rem">Time taken</p>
+      <p style="font-size:32px;font-weight:700;color:#534AB7" id="finalTime">—</p>
+      <p style="font-size:12px;color:#888;margin-top:.25rem">Target: 15 minutes</p>
+    </div>
+
+    <h2 style="margin-bottom:1rem">Learning Pearls 🧠</h2>
+
+    <div class="pearl-card">
+      <h3>Brainstem levels</h3>
+      <p>Midbrain → Pons → Medulla. The cranial nerve nuclei follow: CN 3–4 in midbrain, CN 5–8 in pons, CN 9–12 in medulla.</p>
+    </div>
+    <div class="pearl-card">
+      <h3>Ipsilateral cranial nerve signs</h3>
+      <p>A lesion of a CN nucleus in the brainstem always produces ipsilateral cranial nerve signs — the fibres haven't crossed yet.</p>
+    </div>
+    <div class="pearl-card">
+      <h3>CN XI exception</h3>
+      <p>CN 11's clinical function (SCM and trapezius) localises to the cervical spinal cord — medullary lesions don't cause CN 11 palsy.</p>
+    </div>
+    <div class="pearl-card">
+      <h3>Medial = movement, Lateral = S tracts</h3>
+      <p>Corticospinal (motor) and dorsal columns run medially. Spinothalamic, Spinocerebellar, Spinal Trigeminal and Sympathetic tracts run laterally.</p>
+    </div>
+    <div class="pearl-card">
+      <h3>Decussation in the medulla</h3>
+      <p>Corticospinal tract and dorsal columns cross in the medulla. The spinothalamic tract has already crossed (in the spinal cord), so it carries contralateral body signals by the time it reaches the brainstem.</p>
+    </div>
+    <div class="pearl-card">
+      <h3>Lateral medullary syndrome (Wallenberg's)</h3>
+      <p>Ipsilateral CN signs (uvula deviation away from lesion, hoarseness), ipsilateral Horner's, ipsilateral cerebellar signs, ipsilateral face pain/temp loss, contralateral body pain/temp loss. No motor weakness or tongue deviation — those are medial structures.</p>
+    </div>
+
+    <div style="text-align:center;margin-top:2rem">
+      <button class="btn-primary" onclick="goHome()">← Return to Home Screen</button>
+    </div>
+  </div>
+</div>
+
+<div class="confetti-wrap" id="confettiWrap"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let timerInterval = null;
+let startTime = null;
+let elapsedSeconds = 0;
+
+const TOTAL_STEPS = 9;
+
+// Stage 1 state
+const s1Answers = {}; // hotspot id → chip text
+const s1Correct = {
+  'drop-midbrain': 'Midbrain',
+  'drop-pons': 'Pons',
+  'drop-medulla': 'Medulla'
+};
+
+// Stage 2 CN nuclei answers
+const cnAnswers = {
+  'CN I':  'zone-hemi',
+  'CN II': 'zone-hemi',
+  'CN III':'zone-mid',
+  'CN IV': 'zone-mid',
+  'CN V':  'zone-pons',
+  'CN VI': 'zone-pons',
+  'CN VII':'zone-pons',
+  'CN VIII':'zone-pons',
+  'CN IX': 'zone-med',
+  'CN X':  'zone-med',
+  'CN XI': 'zone-med',
+  'CN XII':'zone-med'
+};
+let s2Correct = 0, s2Wrong = 0, s2Total = 12, s2Done = 0;
+
+// Stage 5 grid answers
+const gridAnswers = {
+  'CN III':  'gz-mid-med',
+  'CN IV':   'gz-mid-med',
+  'CN V':    'gz-pons-lat',
+  'CN VI':   'gz-pons-med',
+  'CN VII':  'gz-pons-lat',
+  'CN VIII': 'gz-pons-lat',
+  'CN IX':   'gz-med-lat',
+  'CN X':    'gz-med-lat',
+  'CN XI':   'gz-med-lat',
+  'CN XII':  'gz-med-med',
+  'Spinothalamic tract':      'gz-tract-lat',
+  'Spinocerebellar tract':    'gz-tract-lat',
+  'Spinal Trigeminal tract':  'gz-tract-lat',
+  'Sympathetic tract':        'gz-tract-lat',
+  'Corticospinal Tract':      'gz-tract-med',
+  'Dorsal Column':            'gz-tract-med'
+};
+let s5Correct = 0, s5Wrong = 0, s5Total = 16, s5Done = 0;
+
+// Drag state
+let dragChipId = null, dragChipText = null, dragChipClass = null, dragFromZone = null;
+
+// ============================================================
+// TIMER
+// ============================================================
+function startGame() {
+  startTime = Date.now();
+  timerInterval = setInterval(updateTimer, 1000);
+  goTo(1);
+}
+
+function updateTimer() {
+  elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+  const remaining = Math.max(0, 15 * 60 - elapsedSeconds);
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
+  document.getElementById('timerDisplay').textContent =
+    String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  if (remaining === 0) clearInterval(timerInterval);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goTo(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + n).classList.add('active');
+  buildSteps(n);
+  if (n === 2) initS2();
+  if (n === 5) initS5();
+  window.scrollTo(0, 0);
+}
+
+function goHome() {
+  if (timerInterval) clearInterval(timerInterval);
+  window.location.href = 'index.html';
+}
+
+// ============================================================
+// STEP INDICATOR
+// ============================================================
+const stepLabels = ['', 'anatomy', 'CN levels', 'CN ipsi', 'CN XI', 'lat/med', 'decuss.', "horner's", 'syndrome', 'debrief'];
+
+function buildSteps(current) {
+  const id = 'steps-' + current;
+  const el = document.getElementById(id);
+  if (!el) return;
+  let html = '';
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    const cls = i < current ? 'done' : i === current ? 'active' : 'pending';
+    const dot = i < current ? '✓' : i;
+    html += `<div class="step-item ${cls}">
+      <div class="step-dot">${dot}</div>
+      <div class="step-label">${stepLabels[i]}</div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ============================================================
+// DRAG HELPERS
+// ============================================================
+function dragStart(e, chipId, chipText, chipClass, fromZone) {
+  dragChipId = chipId;
+  dragChipText = chipText;
+  dragChipClass = chipClass || 'label-chip';
+  dragFromZone = fromZone || null;
+  e.dataTransfer.setData('text/plain', chipText);
+}
+
+// ============================================================
+// STAGE 1: IMAGE HOTSPOT DROP
+// ============================================================
+function dropOnHotspot(e, zoneId) {
+  e.preventDefault();
+  const zone = document.getElementById(zoneId);
+  zone.classList.remove('drag-over');
+
+  if (!dragChipText) return;
+
+  // Remove from previous zone if re-dragging
+  if (dragFromZone) {
+    const prev = document.getElementById(dragFromZone);
+    if (prev) {
+      delete s1Answers[dragFromZone];
+      prev.innerHTML = '<span class="bs-hotspot-label">' + prev.dataset.label + '</span>';
+      prev.classList.remove('correct-zone', 'wrong-zone');
+      // restore chip to pool
+      const pool = document.getElementById('pool-1');
+      const c = document.getElementById(dragChipId);
+      if (c) { c.classList.remove('placed'); c.draggable = true; }
+    }
+  }
+
+  const expected = zone.dataset.answer;
+  const correct = dragChipText === expected;
+
+  s1Answers[zoneId] = { text: dragChipText, correct };
+
+  zone.innerHTML = `<span class="placed-chip label-chip ${correct ? 'correct-placed' : 'wrong-placed'}"
+    draggable="true"
+    ondragstart="dragStart(event,'${dragChipId}','${dragChipText}','label-chip','${zoneId}')"
+    >${dragChipText}</span>`;
+
+  zone.classList.toggle('correct-zone', correct);
+  zone.classList.toggle('wrong-zone', !correct);
+
+  // Mark chip as placed in pool
+  const chip = document.getElementById(dragChipId);
+  if (chip) chip.classList.add('placed');
+
+  dragChipId = null; dragChipText = null; dragFromZone = null;
+
+  checkS1Complete();
+}
+
+function checkS1Complete() {
+  const zones = ['drop-midbrain', 'drop-pons', 'drop-medulla'];
+  const allCorrect = zones.every(z => s1Answers[z] && s1Answers[z].correct);
+  const allPlaced = zones.every(z => s1Answers[z]);
+
+  if (allCorrect) {
+    document.getElementById('fb-s1').textContent = '✓ Perfect! Midbrain → Pons → Medulla — you know the tiers!';
+    document.getElementById('fb-s1').className = 'feedback-box correct-fb show';
+    document.getElementById('btn-s1').disabled = false;
+  } else if (allPlaced) {
+    // wrong placement — don't unlock
+    document.getElementById('fb-s1').textContent = 'Not quite — try swapping the chips around.';
+    document.getElementById('fb-s1').className = 'feedback-box wrong-fb show';
+  }
+}
+
+// ============================================================
+// STAGE 2: CN NUCLEI DROP
+// ============================================================
+function initS2() {
+  const pool = document.getElementById('pool-2');
+  if (pool.children.length > 0) return;
+  const cns = Object.keys(cnAnswers);
+  cns.sort(() => Math.random() - 0.5);
+  cns.forEach(cn => {
+    const d = document.createElement('div');
+    d.className = 'chip black-chip';
+    d.id = 'chip2-' + cn.replace(' ','');
+    d.draggable = true;
+    d.textContent = cn;
+    d.ondragstart = (e) => dragStart(e, d.id, cn, 'black-chip', null);
+    pool.appendChild(d);
+  });
+}
+
+function dropChip(e, zoneId) {
+  e.preventDefault();
+  const zone = document.getElementById(zoneId);
+  zone.classList.remove('drag-over');
+  if (!dragChipText) return;
+
+  const chipKey = dragChipText;
+  const correct = cnAnswers[chipKey] === zoneId;
+
+  if (!correct) {
+    // bounce back
+    const chip = document.getElementById(dragChipId);
+    if (chip) {
+      chip.classList.add('ghost');
+      setTimeout(() => chip.classList.remove('ghost'), 400);
+    }
+    s2Wrong++;
+    document.getElementById('wrong-2').textContent = s2Wrong;
+    dragChipId = null; dragChipText = null;
+    return;
+  }
+
+  // correct placement
+  const placed = document.createElement('span');
+  placed.className = 'placed-chip black-chip correct-placed';
+  placed.textContent = chipKey;
+  zone.appendChild(placed);
+
+  const chip = document.getElementById(dragChipId);
+  if (chip) chip.classList.add('placed');
+
+  s2Correct++;
+  s2Done++;
+  document.getElementById('correct-2').textContent = s2Correct;
+
+  if (s2Done === s2Total) {
+    document.getElementById('summary-2').classList.add('show');
+    document.getElementById('btn-s2').disabled = false;
+  }
+
+  dragChipId = null; dragChipText = null;
+}
+
+// ============================================================
+// STAGE 5: LATERAL/MEDIAL GRID
+// ============================================================
+function initS5() {
+  const pool = document.getElementById('pool-5');
+  if (pool.children.length > 0) return;
+
+  const cnChips = ['CN III','CN IV','CN V','CN VI','CN VII','CN VIII','CN IX','CN X','CN XI','CN XII'];
+  const tractChips = ['Spinothalamic tract','Spinocerebellar tract','Spinal Trigeminal tract','Sympathetic tract','Corticospinal Tract','Dorsal Column'];
+
+  const all = [...cnChips, ...tractChips];
+  all.sort(() => Math.random() - 0.5);
+
+  all.forEach(text => {
+    const isTract = tractChips.includes(text);
+    const d = document.createElement('div');
+    d.className = 'chip ' + (isTract ? 'teal-chip' : 'black-chip');
+    d.id = 'chip5-' + text.replace(/[\s\/]/g, '');
+    d.draggable = true;
+    d.textContent = text;
+    d.ondragstart = (e) => dragStart(e, d.id, text, d.className.includes('teal') ? 'teal-chip' : 'black-chip', null);
+    pool.appendChild(d);
+  });
+}
+
+function dropGrid(e, zoneId) {
+  e.preventDefault();
+  const zone = document.getElementById(zoneId);
+  zone.classList.remove('drag-over');
+  if (!dragChipText) return;
+
+  const chipText = dragChipText;
+  const correct = gridAnswers[chipText] === zoneId;
+
+  if (!correct) {
+    const chip = document.getElementById(dragChipId);
+    if (chip) {
+      chip.classList.add('ghost');
+      setTimeout(() => chip.classList.remove('ghost'), 400);
+    }
+    s5Wrong++;
+    document.getElementById('wrong-5').textContent = s5Wrong;
+    dragChipId = null; dragChipText = null;
+    return;
+  }
+
+  const placed = document.createElement('span');
+  placed.className = 'placed-chip ' + dragChipClass + ' correct-placed';
+  placed.textContent = chipText;
+  zone.appendChild(placed);
+  zone.classList.add('correct-zone');
+
+  const chip = document.getElementById(dragChipId);
+  if (chip) chip.classList.add('placed');
+
+  s5Correct++;
+  s5Done++;
+  document.getElementById('correct-5').textContent = s5Correct;
+
+  if (s5Done === s5Total) {
+    document.getElementById('summary-5').classList.add('show');
+    document.getElementById('btn-s5').disabled = false;
+  }
+
+  dragChipId = null; dragChipText = null;
+}
+
+// ============================================================
+// MCQ
+// ============================================================
+function answerMCQ(stage, btn, isCorrect, wrongFeedback) {
+  const container = document.getElementById('mcq-' + stage);
+  const buttons = container.querySelectorAll('.mcq-btn');
+  // Disable all, mark picked
+  buttons.forEach(b => { b.disabled = true; });
+  btn.classList.add(isCorrect ? 'correct-ans' : 'wrong-ans');
+  // If wrong, reveal the correct one (it has onclick containing true)
+  if (!isCorrect) {
+    buttons.forEach(b => {
+      if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(',true,')) {
+        b.classList.add('correct-ans');
+      }
+    });
+    if (wrongFeedback) {
+      const fb = document.createElement('div');
+      fb.className = 'feedback-box wrong-fb show';
+      fb.textContent = wrongFeedback;
+      container.after(fb);
+    }
+  }
+  document.getElementById('exp-' + stage).classList.add('show');
+  document.getElementById('btn-s' + stage).disabled = false;
+}
+
+// ============================================================
+// MULTI-SELECT (Stage 6)
+// ============================================================
+const s6Selected = new Set();
+function toggleMultiSel(btn) {
+  const id = btn.id;
+  if (s6Selected.has(id)) {
+    s6Selected.delete(id);
+    btn.classList.remove('selected');
+  } else {
+    s6Selected.add(id);
+    btn.classList.add('selected');
+  }
+}
+
+function checkMultiSel6() {
+  const correct = new Set(['ms-cst', 'ms-dc']);
+  const buttons = document.querySelectorAll('#mcq-6 .multisel-btn');
+  buttons.forEach(b => {
+    b.disabled = true;
+    b.onclick = null;
+    const isCorrectAnswer = correct.has(b.id);
+    const wasSelected = s6Selected.has(b.id);
+    if (isCorrectAnswer) b.classList.add('correct-ans');
+    else if (wasSelected) b.classList.add('wrong-ans');
+  });
+  document.getElementById('check-6-btn').disabled = true;
+  document.getElementById('exp-6').classList.add('show');
+  document.getElementById('btn-s6').disabled = false;
+}
+
+// ============================================================
+// HORNER'S SYNDROME (Stage 7)
+// ============================================================
+const hornersSelected = new Set();
+
+function checkHorners() {
+  const correct = new Set(['hms-miosis', 'hms-ptosis', 'hms-anhidrosis']);
+  const buttons = document.querySelectorAll('#mcq-horners .multisel-btn');
+  buttons.forEach(b => {
+    b.disabled = true;
+    b.onclick = null;
+    if (correct.has(b.id)) b.classList.add('correct-ans');
+    else if (hornersSelected.has(b.id)) b.classList.add('wrong-ans');
+  });
+  document.getElementById('check-horners-btn').disabled = true;
+  document.getElementById('exp-horners-A').classList.add('show');
+  // Reveal Part B
+  setTimeout(() => {
+    document.getElementById('card-horners-B').style.display = 'block';
+    document.getElementById('card-horners-B').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 600);
+}
+
+function answerHornersB(btn, isCorrect) {
+  const container = document.getElementById('mcq-horners-B');
+  container.querySelectorAll('.mcq-btn').forEach(b => {
+    b.disabled = true;
+    if (b.getAttribute('onclick').includes('true')) b.classList.add('correct-ans');
+    else if (!isCorrect && b === btn) b.classList.add('wrong-ans');
+  });
+  document.getElementById('exp-horners-B').classList.add('show');
+  document.getElementById('btn-s7').disabled = false;
+}
+
+// Override toggleMultiSel to also track horners set
+const _origToggle = toggleMultiSel;
+toggleMultiSel = function(btn) {
+  _origToggle(btn);
+  if (btn.closest('#mcq-horners')) {
+    if (hornersSelected.has(btn.id)) hornersSelected.delete(btn.id);
+    else hornersSelected.add(btn.id);
+  }
+};
+
+// ============================================================
+// SYNDROME MCQ (Stage 8)
+// ============================================================
+function answerSyndrome(letter) {
+  const cards = document.querySelectorAll('.syndrome-card');
+  cards.forEach(c => {
+    c.classList.add('locked');
+    c.onclick = null;
+  });
+
+  const picked = document.getElementById('opt-' + letter);
+  const correct = letter === 'F';
+
+  picked.classList.add(correct ? 'correct-ans' : 'wrong-ans');
+  if (!correct) {
+    document.getElementById('opt-F').classList.add('correct-ans');
+  }
+
+  document.getElementById('exp-8').classList.add('show');
+  document.getElementById('btn-s8').disabled = false;
+
+  if (correct) launchConfetti();
+}
+
+// ============================================================
+// CONFETTI
+// ============================================================
+function launchConfetti(count = 100) {
+  const wrap = document.getElementById('confettiWrap');
+  const colours = ['#534AB7','#1D9E75','#F9C74F','#F45B69','#43BCCD','#FF9F1C','#E040FB'];
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      background:${colours[Math.floor(Math.random()*colours.length)]};
+      width:${6+Math.random()*10}px;height:${6+Math.random()*10}px;
+      border-radius:${Math.random()>0.5?'50%':'3px'};
+      animation-duration:${1.5+Math.random()*2.5}s;
+      animation-delay:${Math.random()*1.2}s;
+    `;
+    wrap.appendChild(p);
+    setTimeout(() => p.remove(), 5000);
+  }
+}
+
+function launchDebriefConfetti() {
+  launchConfetti(160);
+  setTimeout(() => launchConfetti(120), 1200);
+  setTimeout(() => launchConfetti(80),  2600);
+}
+
+// ============================================================
+// DEBRIEF TIME
+// ============================================================
+function showDebrief() {
+  if (timerInterval) clearInterval(timerInterval);
+  const m = Math.floor(elapsedSeconds / 60);
+  const s = elapsedSeconds % 60;
+  document.getElementById('finalTime').textContent =
+    String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  launchDebriefConfetti();
+}
+
+// Patch navigation to trigger debrief
+const _origGoTo = goTo;
+goTo = function(n) {
+  _origGoTo(n);
+  if (n === 9) showDebrief();
+};
+</script>
+</body>
+</html>
