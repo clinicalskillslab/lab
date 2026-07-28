@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spinal Cord Shake Down — Neuro Escape Room</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F5F4F0;color:#1C1C1E;min-height:100vh;line-height:1.5}
+.screen{display:none}.screen.active{display:block}
+.page-wrap{max-width:780px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+
+/* Typography */
+.module-tag{display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;background:#E1F5EE;color:#0F6E56;padding:4px 12px;border-radius:20px;margin-bottom:1.25rem}
+h1{font-size:30px;font-weight:700;line-height:1.2;margin-bottom:.5rem}
+h2{font-size:20px;font-weight:600;margin-bottom:.4rem}
+h3{font-size:15px;font-weight:600;margin-bottom:.25rem}
+p.lead{font-size:16px;color:#555;line-height:1.6}
+p.body{font-size:14px;color:#555;line-height:1.6}
+
+/* Buttons */
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:#534AB7;color:white;border:none;padding:12px 24px;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;transition:background .15s,opacity .15s}
+.btn-primary:hover{background:#4039A0}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.btn-reveal{display:inline-flex;align-items:center;gap:6px;background:white;color:#534AB7;border:1.5px solid #534AB7;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s;margin-top:1rem}
+.btn-reveal:hover{background:#F0EFFE}
+
+/* Step indicator */
+.step-indicator{display:flex;align-items:flex-start;margin:1.75rem 0 2rem}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative}
+.step-item:not(:last-child)::after{content:'';position:absolute;top:13px;left:calc(50% + 14px);width:calc(100% - 28px);height:2px;background:#E0DFF0;z-index:0}
+.step-item.done:not(:last-child)::after{background:#1D9E75}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;z-index:1;position:relative}
+.step-item.pending .step-dot{background:#EBEBEB;color:#AAA}
+.step-item.active .step-dot{background:#534AB7;color:white}
+.step-item.done .step-dot{background:#1D9E75;color:white}
+.step-label{font-size:10px;color:#AAA;text-transform:lowercase;letter-spacing:.02em;text-align:center}
+.step-item.active .step-label{color:#534AB7;font-weight:600}
+.step-item.done .step-label{color:#1D9E75}
+
+/* Timer */
+.timer-bar{display:flex;justify-content:flex-end;margin-bottom:.5rem}
+.timer-badge{display:inline-flex;align-items:center;gap:6px;background:white;border:1px solid #E5E5E5;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;color:#534AB7}
+
+/* Card */
+.card{background:white;border-radius:14px;border:.5px solid #E5E5E5;padding:1.5rem;margin-bottom:1rem}
+.card-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#534AB7;margin-bottom:.75rem}
+
+/* Intro text */
+.intro-text{font-size:14px;color:#555;line-height:1.65;margin-bottom:1.25rem}
+
+/* Pearl / summary */
+.pearl{margin-top:1rem;background:#F7F6FF;border-left:3px solid #534AB7;padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;color:#444;line-height:1.55}
+.pearl strong{color:#534AB7}
+
+/* Feedback */
+.feedback-box{margin-top:1rem;padding:10px 14px;border-radius:8px;font-size:13px;line-height:1.55;display:none}
+.feedback-box.show{display:block}
+.feedback-box.correct-fb{background:#EBF7F2;color:#0F6E56}
+.feedback-box.wrong-fb{background:#FDF2F2;color:#993C1D}
+
+/* ===== DRAG-DROP ===== */
+.chip-pool{display:flex;flex-wrap:wrap;gap:8px;min-height:50px;padding:12px;background:#F5F4F0;border-radius:10px;margin-bottom:1.5rem;border:1.5px dashed #DDD}
+.chip{display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:grab;user-select:none;transition:box-shadow .15s,opacity .15s;white-space:nowrap}
+.chip:active{cursor:grabbing;box-shadow:0 4px 16px rgba(0,0,0,.18);opacity:.9}
+.chip.black-chip{background:#1C1C1E;color:white}
+.chip.teal-chip{background:#0F6E56;color:white}
+.chip.label-chip{background:#534AB7;color:white}
+.chip.placed{opacity:.35;cursor:default;pointer-events:none}
+
+.drop-col{border:2px dashed #D0CEEC;border-radius:10px;min-height:60px;padding:10px;transition:background .15s,border-color .15s;display:flex;flex-direction:column;gap:6px}
+.drop-col.drag-over{background:#EEF0FF;border-color:#534AB7}
+.drop-col.correct-zone{border-color:#1D9E75;background:#F2FAF6}
+.drop-col.wrong-zone{border-color:#E24B4A;background:#FFF0F0}
+
+.drop-col-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#534AB7;margin-bottom:6px}
+.drop-col-subheader{font-size:10px;color:#888;margin-bottom:4px}
+
+.cols-grid{display:grid;gap:10px;margin-bottom:1rem}
+.cols-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.cols-2{grid-template-columns:1fr 1fr}
+.cols-3{grid-template-columns:1fr 1fr 1fr}
+.cols-5{grid-template-columns:1fr 1fr 1fr 1fr 1fr}
+
+/* placed chip in drop zone */
+.placed-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:14px;font-size:12px;font-weight:500;margin:2px;cursor:pointer;transition:all .15s}
+.placed-chip.black-chip{background:#1C1C1E;color:white}
+.placed-chip.teal-chip{background:#0F6E56;color:white}
+.placed-chip.label-chip{background:#534AB7;color:white}
+.placed-chip.correct-placed{border:2px solid #1D9E75}
+.placed-chip.wrong-placed{border:2px solid #E24B4A;animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* Tap-to-place selection highlight */
+.chip.tap-sel{outline:3px solid #FFE066;box-shadow:0 0 0 6px rgba(255,224,102,.28);transform:scale(1.05)}
+
+/* Tract numbered drop zones (Stage 1a) */
+.tract-drop-zone{flex:1;min-height:40px;border:2px dashed #D0CEEC;border-radius:8px;padding:8px 14px;font-size:13px;color:#AAA;display:flex;align-items:center;transition:background .15s,border-color .15s;cursor:default}
+.tract-drop-zone.drag-over{background:#EEF0FF;border-color:#534AB7;border-style:solid;color:#534AB7}
+.tract-drop-zone.correct-zone{border-color:#1D9E75;background:#F2FAF6;border-style:solid;color:#0F6E56;font-weight:600}
+.tract-drop-zone.wrong-zone{border-color:#E24B4A;background:#FFF0F0;border-style:solid;animation:shake .3s}
+
+/* ===== MCQ ===== */
+.mcq-options{display:flex;flex-direction:column;gap:8px;margin:1rem 0}
+.mcq-btn{width:100%;text-align:left;padding:12px 16px;border-radius:10px;border:1.5px solid #E0E0E0;background:#FAFAFA;font-size:14px;font-weight:500;cursor:pointer;transition:all .12s;color:#1C1C1E;line-height:1.4}
+.mcq-btn:hover:not(:disabled){border-color:#534AB7;color:#534AB7;background:#F0EFFE}
+.mcq-btn.correct-ans{border-color:#1D9E75;background:#EBF7F2;color:#0F6E56}
+.mcq-btn.wrong-ans{border-color:#E24B4A;background:#FFF0F0;color:#E24B4A}
+.mcq-btn:disabled{cursor:default}
+
+/* Explanation box */
+.explanation{background:#F7F6FF;border-left:3px solid #534AB7;padding:12px 16px;border-radius:0 10px 10px 0;font-size:13px;color:#444;line-height:1.6;margin-top:1rem;display:none}
+.explanation.show{display:block}
+
+/* Summary box */
+.summary-box{background:#EBF7F2;border-radius:10px;padding:12px 16px;font-size:13px;color:#0F6E56;line-height:1.55;margin:1rem 0;display:none;border:1px solid #B8E8D8}
+.summary-box.show{display:block}
+
+/* Score tracker */
+.score-tracker{background:white;border-radius:10px;border:.5px solid #E5E5E5;padding:10px 16px;display:inline-flex;gap:16px;font-size:13px;margin-bottom:1rem}
+.score-item{display:flex;align-items:center;gap:5px}
+.score-dot{width:8px;height:8px;border-radius:50%}
+.score-dot.green{background:#1D9E75}
+.score-dot.red{background:#E24B4A}
+
+/* Welcome screen */
+.welcome-hero{text-align:center;padding:2rem 0 1.5rem}
+.welcome-hero img{width:140px;margin:0 auto 1.5rem;display:block}
+.case-badge{display:inline-block;background:#534AB7;color:white;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:4px 14px;border-radius:20px;margin-bottom:1rem}
+
+/* Debrief */
+.debrief-hero{text-align:center;padding:1.5rem 0}
+.debrief-hero img{width:160px;margin:0 auto 1rem;display:block}
+.pearl-card{background:white;border-radius:12px;border:.5px solid #E5E5E5;padding:1rem 1.25rem;margin-bottom:.75rem}
+.pearl-card h3{font-size:14px;color:#534AB7;margin-bottom:.25rem}
+.pearl-card p{font-size:13px;color:#555;line-height:1.55}
+
+/* Neuro-lingo vertical drop zones */
+.lingo-zone-wrap{display:flex;flex-direction:column;gap:12px;margin-bottom:1.5rem}
+.lingo-zone{border:2px dashed #D0CEEC;border-radius:10px;padding:10px 12px;transition:background .15s,border-color .15s;display:flex;gap:10px;align-items:flex-start}
+.lingo-zone.drag-over{background:#EEF0FF;border-color:#534AB7}
+.lingo-zone.correct-zone{border-color:#1D9E75;background:#F2FAF6;border-style:solid}
+.lingo-zone-def{font-size:13px;color:#555;line-height:1.4;flex:1;font-style:italic}
+.lingo-zone-chip{flex-shrink:0;min-width:80px}
+
+/* ===== CARD FLIP (Stage 4) ===== */
+.round-badge{display:inline-block;background:#F0EFFE;color:#534AB7;border:1.5px solid #534AB7;border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;margin-bottom:1rem;letter-spacing:.04em}
+.flip-cards-row{display:flex;gap:16px;justify-content:center;margin-bottom:1.5rem;flex-wrap:wrap}
+.flip-scene{perspective:700px;width:160px;flex-shrink:0}
+.flip-inner{position:relative;width:100%;padding-top:130%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.flip-inner.flipped{transform:rotateY(180deg)}
+.flip-face{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;border-radius:12px;overflow:hidden;border:2px solid #E0DEEE}
+.flip-face.flip-back{transform:rotateY(180deg)}
+.flip-face img{width:100%;height:100%;object-fit:contain;display:block;background:white}
+.flip-btn{display:block;width:100%;text-align:center;padding:6px;background:#F0EFFE;border:1.5px solid #534AB7;border-radius:0 0 10px 10px;font-size:12px;font-weight:600;color:#534AB7;cursor:pointer;transition:background .15s;margin-top:-2px}
+.flip-btn:hover:not(:disabled){background:#E4E0FF}
+.flip-btn:disabled{opacity:.4;cursor:default}
+.flip-btn.flipped-done{background:#EBF7F2;border-color:#1D9E75;color:#0F6E56}
+
+.flip-card-wrap{display:flex;flex-direction:column}
+
+/* Diagnosis selector */
+.diag-section{display:none;margin-top:.5rem}
+.diag-section.show{display:block}
+.diag-prompt{font-size:14px;font-weight:600;color:#1C1C1E;margin-bottom:.75rem}
+.diag-options{display:flex;flex-direction:column;gap:6px}
+.diag-btn{width:100%;text-align:left;padding:10px 14px;border-radius:10px;border:1.5px solid #E0E0E0;background:#FAFAFA;font-size:13px;font-weight:500;cursor:pointer;transition:all .12s;color:#1C1C1E}
+.diag-btn:hover:not(:disabled){border-color:#534AB7;color:#534AB7;background:#F0EFFE}
+.diag-btn.correct-ans{border-color:#1D9E75;background:#EBF7F2;color:#0F6E56;font-weight:600}
+.diag-btn.wrong-ans{border-color:#E24B4A;background:#FFF0F0;color:#E24B4A}
+.diag-btn:disabled{cursor:default}
+
+.diag-pearl{background:#F7F6FF;border-left:3px solid #534AB7;padding:12px 16px;border-radius:0 10px 10px 0;font-size:13px;color:#444;line-height:1.6;margin-top:1rem;display:none}
+.diag-pearl.show{display:block}
+.diag-pearl img{width:100%;max-width:400px;border-radius:8px;margin:10px 0;display:block}
+
+.round-nav-btn{display:inline-flex;align-items:center;gap:6px;background:#534AB7;color:white;border:none;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-top:1rem;display:none}
+.round-nav-btn.show{display:inline-flex}
+.round-nav-btn:hover{background:#4039A0}
+
+.rounds-progress{display:flex;gap:6px;margin-bottom:1rem;align-items:center}
+.round-pip{width:10px;height:10px;border-radius:50%;background:#E0DFF0;transition:background .2s}
+.round-pip.done{background:#1D9E75}
+.round-pip.active{background:#534AB7}
+
+/* confetti */
+.confetti-wrap{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti-piece{position:absolute;width:10px;height:10px;border-radius:2px;animation:confettiFall linear forwards}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:640px){
+  h1{font-size:22px}
+  h2{font-size:17px}
+  .page-wrap{padding:1.5rem 1rem 3rem}
+  /* Stage 1a: stack image above numbered zones */
+  #stage1a-layout{flex-direction:column !important}
+  #stage1a-layout > div:first-child{width:100% !important}
+  /* Stage 1b: 2-col on mobile */
+  .cols-4{grid-template-columns:1fr 1fr}
+  /* Card flip: shrink cards */
+  .flip-scene{width:100px}
+  .flip-cards-row{gap:8px}
+  .flip-btn{font-size:11px;padding:5px}
+  /* Step indicator: hide labels */
+  .step-label{display:none}
+  /* Chip pool: wrap nicely */
+  .chip{font-size:12px;padding:6px 11px}
+  /* Lingo: reduce gap */
+  .lingo-zone-wrap{gap:8px}
+  #lingo-img{display:none}
+}
+@media(max-width:400px){
+  .flip-scene{width:85px}
+  .cols-4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- STICKY HEADER -->
+<div style="position:sticky;top:0;z-index:100;background:#F5F4F0;border-bottom:1px solid #E8E7E3;padding:8px 1.5rem">
+  <div style="max-width:780px;margin:0 auto;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;font-weight:600;color:#534AB7">🧠 Spinal Cord Shake Down</span>
+    <span class="timer-badge" id="timerBadge">⏱ <span id="timerDisplay">10:00</span></span>
+  </div>
+</div>
+
+<!-- ===== SCREEN 0: WELCOME ===== -->
+<div class="screen active" id="screen-0">
+  <div class="page-wrap">
+    <div class="welcome-hero">
+      <img src="images/spine-brain-diagram.png" alt="Spine brain diagram">
+      <div class="case-badge">Case 3</div>
+      <h1>Spinal Cord Shake Down</h1>
+      <p class="lead" style="max-width:480px;margin:.75rem auto 1.5rem">Hello doctor human! Welcome to Spinal Cord Shake Down where you will reconnect with spinal cord essentials for clinical problem solving.</p>
+      <p class="body" style="margin-bottom:2rem">You have 10 minutes for this game.</p>
+      <button class="btn-primary" onclick="startGame()">🚪 Enter the Room — Start Timer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 1: STAGE 1a — TRACT POSITIONS ===== -->
+<div class="screen" id="screen-1">
+  <div class="page-wrap">
+    <div id="step-ind-1"></div>
+    <div class="module-tag">Stage 1 of 6</div>
+    <h2>Spinal Cord Orientation</h2>
+    <p class="intro-text">Match the spinal cord tracts with the correct numbered position on the diagram. Drag each tract name into the box next to the matching number. Wrong drops bounce back.</p>
+
+    <!-- Chip pool -->
+    <div class="chip-pool" id="pool-1a">
+      <div class="chip label-chip" id="chip-dc" draggable="true" ondragstart="dragStart(event,'chip-dc','Dorsal Column','label-chip')">Dorsal Column</div>
+      <div class="chip label-chip" id="chip-lcs" draggable="true" ondragstart="dragStart(event,'chip-lcs','Lateral Corticospinal Tract','label-chip')">Lateral Corticospinal Tract</div>
+      <div class="chip label-chip" id="chip-stt" draggable="true" ondragstart="dragStart(event,'chip-stt','Spinothalamic Tract','label-chip')">Spinothalamic Tract</div>
+      <div class="chip label-chip" id="chip-acs" draggable="true" ondragstart="dragStart(event,'chip-acs','Anterior Corticospinal Tract','label-chip')">Anterior Corticospinal Tract</div>
+    </div>
+
+    <!-- Side-by-side: image left, numbered zones right -->
+    <div id="stage1a-layout" style="display:flex;gap:1.5rem;align-items:flex-start;margin-bottom:1.25rem">
+      <!-- Diagram -->
+      <div style="flex-shrink:0;width:220px">
+        <img src="images/spinal-cord-hotspots.png" alt="Spinal cord cross-section" style="width:100%;border-radius:10px;display:block">
+      </div>
+      <!-- Numbered drop zones -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:10px;justify-content:center">
+        <!-- Zone 1: Dorsal Column -->
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:30px;height:30px;border-radius:50%;background:#1C1C1E;color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">1</div>
+          <div class="tract-drop-zone" id="hz1"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropHotspot1a(event,'hz1','chip-dc')">Drop tract here</div>
+        </div>
+        <!-- Zone 2: Lateral Corticospinal -->
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:30px;height:30px;border-radius:50%;background:#1C1C1E;color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">2</div>
+          <div class="tract-drop-zone" id="hz2"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropHotspot1a(event,'hz2','chip-lcs')">Drop tract here</div>
+        </div>
+        <!-- Zone 3: Spinothalamic -->
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:30px;height:30px;border-radius:50%;background:#1C1C1E;color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">3</div>
+          <div class="tract-drop-zone" id="hz3"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropHotspot1a(event,'hz3','chip-stt')">Drop tract here</div>
+        </div>
+        <!-- Zone 4: Anterior Corticospinal -->
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:30px;height:30px;border-radius:50%;background:#1C1C1E;color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">4</div>
+          <div class="tract-drop-zone" id="hz4"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropHotspot1a(event,'hz4','chip-acs')">Drop tract here</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="score-1a" class="score-tracker" style="display:none">
+      <div class="score-item"><div class="score-dot green"></div><span id="correct-1a">0</span> correct</div>
+      <div class="score-item"><div class="score-dot red"></div><span id="wrong-1a">0</span> wrong</div>
+    </div>
+
+    <button class="btn-primary" id="btn-s1" disabled onclick="goTo(2)">Continue to next stage →</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 2: STAGE 1b — TRACT FUNCTIONS ===== -->
+<div class="screen" id="screen-2">
+  <div class="page-wrap">
+    <div id="step-ind-2"></div>
+    <div class="module-tag">Stage 2 of 6</div>
+    <h2>Spinal Cord Orientation</h2>
+    <p class="intro-text">Now that we have the position of the tracts clear, let's assign functions. Drag and drop the functions to the correct tract. Wrong drops bounce back.</p>
+
+    <!-- Chip pool -->
+    <div class="chip-pool" id="pool-1b">
+      <div class="chip black-chip" id="f-vib" draggable="true" ondragstart="dragStart(event,'f-vib','vibration','black-chip')">vibration</div>
+      <div class="chip black-chip" id="f-prop" draggable="true" ondragstart="dragStart(event,'f-prop','proprioception','black-chip')">proprioception</div>
+      <div class="chip black-chip" id="f-pain" draggable="true" ondragstart="dragStart(event,'f-pain','pain','black-chip')">pain</div>
+      <div class="chip black-chip" id="f-temp" draggable="true" ondragstart="dragStart(event,'f-temp','temperature','black-chip')">temperature</div>
+      <div class="chip black-chip" id="f-fine" draggable="true" ondragstart="dragStart(event,'f-fine','Fine touch','black-chip')">Fine touch</div>
+      <div class="chip black-chip" id="f-crude" draggable="true" ondragstart="dragStart(event,'f-crude','Crude touch','black-chip')">Crude touch</div>
+      <div class="chip teal-chip" id="f-motor-ll" draggable="true" ondragstart="dragStart(event,'f-motor-ll','Motor function upper and lower limbs','teal-chip')">Motor upper &amp; lower limbs</div>
+      <div class="chip teal-chip" id="f-motor-trunk" draggable="true" ondragstart="dragStart(event,'f-motor-trunk','Motor function trunk, neck, girdle, posture','teal-chip')">Motor trunk, neck, posture</div>
+    </div>
+
+    <!-- 4 columns -->
+    <div class="cols-grid cols-4">
+      <div>
+        <div class="drop-col-header">Dorsal Column</div>
+        <div class="drop-col" id="col-dc"
+             ondragover="event.preventDefault();this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="dropFunc(event,'col-dc',['f-vib','f-prop','f-fine'])">
+        </div>
+      </div>
+      <div>
+        <div class="drop-col-header">Spinothalamic Tract</div>
+        <div class="drop-col" id="col-stt"
+             ondragover="event.preventDefault();this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="dropFunc(event,'col-stt',['f-pain','f-temp','f-crude'])">
+        </div>
+      </div>
+      <div>
+        <div class="drop-col-header">Lateral Corticospinal</div>
+        <div class="drop-col" id="col-lcs"
+             ondragover="event.preventDefault();this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="dropFunc(event,'col-lcs',['f-motor-ll'])">
+        </div>
+      </div>
+      <div>
+        <div class="drop-col-header">Anterior Corticospinal</div>
+        <div class="drop-col" id="col-acs"
+             ondragover="event.preventDefault();this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="dropFunc(event,'col-acs',['f-motor-trunk'])">
+        </div>
+      </div>
+    </div>
+
+    <div id="summary-1b" class="summary-box">
+      <strong>Key Concepts &amp; Clinical Pearls</strong><br>
+      Fine touch and crude touch are carried in 2 different pathways. And so even with sensory deficits, there may still be the perception of touch.<br><br>
+      For each tract we just pick one way of testing. For the dorsal column you'll pick either vibration sense or proprioception. And for spinothalamic you'll choose pain or temperature.<br><br>
+      Amazing — you are on a roll! Now let's revise where these tracts crossover (decussate).
+    </div>
+
+    <button class="btn-primary" id="btn-s2" disabled onclick="goTo(3)">Continue to next stage →</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 3: STAGE 2a — MCQ DECUSSATION ===== -->
+<div class="screen" id="screen-3">
+  <div class="page-wrap">
+    <div id="step-ind-3"></div>
+    <div class="module-tag">Stage 3 of 6</div>
+    <h2>Spinal Cord Tracts &amp; Decussation</h2>
+    <p class="intro-text">One of the most important concepts for solving neurological problems is remembering where tracts decussate or crossover. Below is a diagram representing the main clinically relevant spinal cord tracts. You'll notice two tracts decussate in the brainstem (medulla) and only one decussates upon entry to the spinal cord.</p>
+
+    <div class="card" style="text-align:center;padding:1rem">
+      <img src="images/spinal-pathways-hotspots.png" alt="Spinal pathways diagram" style="max-width:320px;width:100%;border-radius:8px">
+    </div>
+
+    <div class="card">
+      <p style="font-size:15px;font-weight:600;margin-bottom:1rem">Which tract decussates upon entry to the spinal cord (tract 1 in our diagram)?</p>
+      <div class="mcq-options" id="mcq-2a">
+        <button class="mcq-btn" onclick="answerMCQ('2a',this,false,'Incorrect — the dorsal column fibres decussate in the medulla')">Dorsal Column (vibration and proprioception)</button>
+        <button class="mcq-btn" onclick="answerMCQ('2a',this,true,'')">Spinothalamic Tract (pain and temperature)</button>
+        <button class="mcq-btn" onclick="answerMCQ('2a',this,false,'Incorrect — the corticospinal fibres decussate in the medulla')">Corticospinal Tract (motor function)</button>
+      </div>
+      <div class="explanation" id="exp-2a">
+        Okay great — lock that in for the upcoming puzzles!
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-s3" disabled onclick="goTo(4)">Continue to next stage →</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 4: STAGE 2b — MCQ UMN/LMN ===== -->
+<div class="screen" id="screen-4">
+  <div class="page-wrap">
+    <div id="step-ind-4"></div>
+    <div class="module-tag">Stage 4 of 6</div>
+    <h2>Spinal Cord Tracts — UMN or LMN?</h2>
+
+    <div class="card">
+      <p style="font-size:15px;font-weight:600;margin-bottom:1rem">Damage to which part of the spinal cord causes LMN signs?</p>
+      <div class="mcq-options" id="mcq-2b">
+        <button class="mcq-btn" onclick="answerMCQ('2b',this,false,'')">Corticospinal tract</button>
+        <button class="mcq-btn" onclick="answerMCQ('2b',this,false,'Incorrect — the dorsal column fibres carry vibration, proprioception and fine touch (not motor signals)')">Dorsal columns</button>
+        <button class="mcq-btn" onclick="answerMCQ('2b',this,true,'')">Anterior horn cells</button>
+        <button class="mcq-btn" onclick="answerMCQ('2b',this,false,'Incorrect — the spinothalamic fibres carry pain, temperature and crude touch (not motor signals)')">Spinothalamic tract</button>
+      </div>
+      <div class="explanation" id="exp-2b">
+        Anterior horn cells are the cell body of the second-order neurons that leave the spinal cord and innervate peripheral muscles. The anterior horn is just a collection of grey matter housing these cells collectively. Damage to the anterior horn cell leads to <strong>LMN signs</strong>, whilst damage to the descending corticospinal tract results in <strong>UMN signs</strong> below the lesion.
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-s4" disabled onclick="goTo(5)">Continue to next stage →</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 5: STAGE 3 — NEURO-LINGO ===== -->
+<div class="screen" id="screen-5">
+  <div class="page-wrap">
+    <div id="step-ind-5"></div>
+    <div class="module-tag">Stage 5 of 6</div>
+    <h2>Spinal Neuro-Lingo</h2>
+    <p class="intro-text">One of the things I've been finding on this mission to demystify neurology is that it's a language in and of itself. So let's make sure your linguistics are up to speed by playing Spinal Neuro-lingo! Match the word to the meaning.</p>
+
+    <div style="display:flex;gap:1.5rem;align-items:flex-start">
+      <div style="flex:1">
+        <!-- Chip pool -->
+        <div class="chip-pool" id="pool-lingo">
+          <div class="chip label-chip" id="lg-sl" draggable="true" ondragstart="dragStart(event,'lg-sl','Sensory level','label-chip')">Sensory level</div>
+          <div class="chip label-chip" id="lg-my" draggable="true" ondragstart="dragStart(event,'lg-my','Myelitis','label-chip')">Myelitis</div>
+          <div class="chip label-chip" id="lg-mp" draggable="true" ondragstart="dragStart(event,'lg-mp','Myelopathy','label-chip')">Myelopathy</div>
+          <div class="chip label-chip" id="lg-sx" draggable="true" ondragstart="dragStart(event,'lg-sx','Syrinx','label-chip')">Syrinx</div>
+          <div class="chip label-chip" id="lg-sm" draggable="true" ondragstart="dragStart(event,'lg-sm','Syringomyelia','label-chip')">Syringomyelia</div>
+        </div>
+
+        <!-- Vertical drop zones -->
+        <div class="lingo-zone-wrap" id="lingo-zones">
+          <div class="lingo-zone" id="lz-mp"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropLingo(event,'lz-mp','lg-mp')">
+            <div class="lingo-zone-def">A problem with the spinal cord (many causes)</div>
+            <div class="lingo-zone-chip" id="lzc-mp"></div>
+          </div>
+          <div class="lingo-zone" id="lz-my"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropLingo(event,'lz-my','lg-my')">
+            <div class="lingo-zone-def">Inflammation of the spinal cord</div>
+            <div class="lingo-zone-chip" id="lzc-my"></div>
+          </div>
+          <div class="lingo-zone" id="lz-sl"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropLingo(event,'lz-sl','lg-sl')">
+            <div class="lingo-zone-def">The specific dermatome (an area of skin supplied by a single spinal nerve) where normal sensation is present, while sensation below is diminished</div>
+            <div class="lingo-zone-chip" id="lzc-sl"></div>
+          </div>
+          <div class="lingo-zone" id="lz-sx"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropLingo(event,'lz-sx','lg-sx')">
+            <div class="lingo-zone-def">A fluid-filled cavity inside the spinal cord</div>
+            <div class="lingo-zone-chip" id="lzc-sx"></div>
+          </div>
+          <div class="lingo-zone" id="lz-sm"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="dropLingo(event,'lz-sm','lg-sm')">
+            <div class="lingo-zone-def">A condition where a fluid-filled cavity develops within the spinal cord</div>
+            <div class="lingo-zone-chip" id="lzc-sm"></div>
+          </div>
+        </div>
+      </div>
+      <div id="lingo-img" style="flex-shrink:0;width:120px;display:flex;align-items:center">
+        <img src="images/neuro-lingo-brain.png" alt="Brain illustration" style="width:100%;border-radius:8px">
+      </div>
+    </div>
+
+    <div id="summary-lingo" class="summary-box">Too easy for you!</div>
+
+    <button class="btn-primary" id="btn-s5" disabled onclick="goTo(6)">Continue to next stage →</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 6: STAGE 4 — CARD FLIP SEQUENTIAL ===== -->
+<div class="screen" id="screen-6">
+  <div class="page-wrap">
+    <div id="step-ind-6"></div>
+    <div class="module-tag">Stage 6 of 6</div>
+    <h2>Pattern Matching Spinal Cord Lesions</h2>
+    <p class="intro-text">Each patient had a spinal cord pathology several weeks ago — where you see motor weakness, interpret this as UMN signs. Flip the cards in order (motor → sensory pain/temp → vibration/proprioception) to build the clinical picture, then select the correct spinal cord lesion.</p>
+
+    <!-- Round progress pips -->
+    <div class="rounds-progress" id="round-pips">
+      <span style="font-size:12px;color:#888;margin-right:4px">Round:</span>
+      <div class="round-pip active" id="pip-0"></div>
+      <div class="round-pip" id="pip-1"></div>
+      <div class="round-pip" id="pip-2"></div>
+      <div class="round-pip" id="pip-3"></div>
+      <div class="round-pip" id="pip-4"></div>
+    </div>
+
+    <div id="round-badge" class="round-badge">Round 1 of 5</div>
+
+    <!-- Cards row -->
+    <div class="flip-cards-row" id="flip-row">
+      <!-- Card 1: Motor -->
+      <div class="flip-card-wrap">
+        <div class="flip-scene">
+          <div class="flip-inner" id="flip-0">
+            <div class="flip-face"><img src="" id="flip-front-0" alt="Motor exam"></div>
+            <div class="flip-face flip-back"><img src="" id="flip-back-0" alt="Motor result"></div>
+          </div>
+        </div>
+        <button class="flip-btn" id="flip-btn-0" onclick="flipCard(0)">🔍 Flip</button>
+      </div>
+      <!-- Card 2: Pain/Temp -->
+      <div class="flip-card-wrap">
+        <div class="flip-scene">
+          <div class="flip-inner" id="flip-1">
+            <div class="flip-face"><img src="" id="flip-front-1" alt="Pain/temp exam"></div>
+            <div class="flip-face flip-back"><img src="" id="flip-back-1" alt="Pain/temp result"></div>
+          </div>
+        </div>
+        <button class="flip-btn" id="flip-btn-1" onclick="flipCard(1)" disabled>🔍 Flip</button>
+      </div>
+      <!-- Card 3: Vibration/Proprioception -->
+      <div class="flip-card-wrap">
+        <div class="flip-scene">
+          <div class="flip-inner" id="flip-2">
+            <div class="flip-face"><img src="" id="flip-front-2" alt="Vibration exam"></div>
+            <div class="flip-face flip-back"><img src="" id="flip-back-2" alt="Vibration result"></div>
+          </div>
+        </div>
+        <button class="flip-btn" id="flip-btn-2" onclick="flipCard(2)" disabled>🔍 Flip</button>
+      </div>
+    </div>
+
+    <!-- Diagnosis section -->
+    <div class="diag-section" id="diag-section">
+      <p class="diag-prompt">What is the spinal cord lesion pattern?</p>
+      <div class="diag-options" id="diag-options"></div>
+      <div class="diag-pearl" id="diag-pearl"></div>
+      <button class="round-nav-btn" id="round-next-btn" onclick="nextRound()">Next Round →</button>
+    </div>
+
+    <!-- Complete level button (shown after all 5 rounds) -->
+    <button class="btn-primary" id="btn-complete" style="display:none" onclick="goTo(7)">🎉 Complete Level →</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 7: DEBRIEF ===== -->
+<div class="screen" id="screen-7">
+  <div class="page-wrap">
+    <div class="debrief-hero">
+      <img src="images/brain-trophy1.png" alt="Trophy brain">
+      <h1>Yay! Another neurology puzzle bites the dust! 🎉</h1>
+      <p class="lead" style="margin:.75rem 0">Time taken: <strong id="time-taken">—</strong></p>
+    </div>
+
+    <div class="card" style="text-align:center;margin-bottom:1.5rem">
+      <img src="images/spinal-cord-regions-blank.png" alt="Spinal cord regions" style="max-width:320px;width:100%;border-radius:8px">
+    </div>
+
+    <div class="pearl-card">
+      <h3>Tract Positions</h3>
+      <p>The dorsal columns (vibration, proprioception, fine touch) run posterior. The spinothalamic tract (pain, temperature, crude touch) runs anterolateral. The lateral corticospinal tract (limb motor) runs lateral, and the anterior corticospinal tract (trunk, posture) runs anterior.</p>
+    </div>
+    <div class="pearl-card">
+      <h3>Two Different Pathways for Touch</h3>
+      <p>Fine touch travels in the dorsal column; crude touch travels in the spinothalamic tract. This means a sensory deficit may still leave some perception of touch — the pathway that isn't damaged carries the signal.</p>
+    </div>
+    <div class="pearl-card">
+      <h3>Decussation Matters Clinically</h3>
+      <p>The spinothalamic tract crosses at the level it enters the cord. The dorsal column and corticospinal tracts cross in the medulla. This is the key to Brown-Séquard syndrome: ipsilateral motor + dorsal column loss, but <em>contralateral</em> pain/temperature loss.</p>
+    </div>
+    <div class="pearl-card">
+      <h3>UMN vs LMN</h3>
+      <p>Damage to the anterior horn cell → LMN signs (flaccid weakness, wasting, fasciculations). Damage to the descending corticospinal tract → UMN signs below the lesion (spasticity, brisk reflexes, upgoing plantar).</p>
+    </div>
+    <div class="pearl-card">
+      <h3>Central Cord Lesions</h3>
+      <p>Pain and temperature are affected first because the spinothalamic tract fibres cross centrally. As the lesion enlarges, other tracts are recruited. Syringomyelia is a classic cause — watch for a cape-distribution sensory loss.</p>
+    </div>
+    <div class="pearl-card">
+      <h3>Posterior Cord Pattern</h3>
+      <p>Vibration and proprioception loss with preserved motor and pain/temperature is the signature of posterior cord disease. Remember B12 deficiency and tabes dorsalis (tertiary syphilis) — plus trauma, compression, and MS.</p>
+    </div>
+
+    <div style="text-align:center;margin-top:2rem">
+      <button class="btn-primary" onclick="goHome()">🏠 Return to Home Screen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======= GLOBAL STATE =======
+let timerInterval = null;
+let startTime = null;
+let elapsedSeconds = 0;
+
+const TOTAL_STEPS = 7;
+const stepLabels = ['','tracts','functions','decuss.','UMN/LMN','lingo','patterns','debrief'];
+
+// Stage 1a hotspot tracking
+const hz1aCorrect = {hz1:'chip-dc', hz2:'chip-lcs', hz3:'chip-stt', hz4:'chip-acs'};
+let hz1aPlaced = {hz1:false, hz2:false, hz3:false, hz4:false};
+let hz1aWrong = 0, hz1aRight = 0;
+
+// Stage 1b function tracking
+// col -> allowed chip ids
+const colAllowed = {
+  'col-dc': ['f-vib','f-prop','f-fine'],
+  'col-stt': ['f-pain','f-temp','f-crude'],
+  'col-lcs': ['f-motor-ll'],
+  'col-acs': ['f-motor-trunk']
+};
+let funcPlaced = {}; // chipId -> colId
+const TOTAL_FUNC_CHIPS = 8;
+
+// Stage lingo tracking
+const lingoCorrect = {
+  'lz-mp':'lg-mp','lz-my':'lg-my','lz-sl':'lg-sl',
+  'lz-sx':'lg-sx','lz-sm':'lg-sm'
+};
+let lingoPlaced = {};
+
+// Drag state
+let dragChipId = '', dragChipText = '', dragChipClass = '';
+
+// ======= TIMER =======
+function startGame() {
+  startTime = Date.now();
+  timerInterval = setInterval(tickTimer, 1000);
+  goTo(1);
+}
+
+function tickTimer() {
+  elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+  const remaining = Math.max(0, 600 - elapsedSeconds);
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
+  document.getElementById('timerDisplay').textContent = m + ':' + String(s).padStart(2,'0');
+  if (remaining <= 0) clearInterval(timerInterval);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+}
+
+function formatElapsed(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m + ' min ' + s + ' sec';
+}
+
+// ======= NAVIGATION =======
+function goTo(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+n).classList.add('active');
+  window.scrollTo(0,0);
+  if (n >= 1 && n <= TOTAL_STEPS) renderStepIndicator(n);
+  if (n === TOTAL_STEPS) showDebrief();
+  if (n === 6) { shuffledRounds = shuffleArray([...ROUNDS]); initRound(0); }
+}
+
+function goHome() {
+  window.location.href = 'index.html';
+}
+
+function renderStepIndicator(currentStep) {
+  const el = document.getElementById('step-ind-' + currentStep);
+  if (!el) return;
+  let html = '<div class="step-indicator">';
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    let cls = i < currentStep ? 'done' : i === currentStep ? 'active' : 'pending';
+    let dot = i < currentStep ? '✓' : i;
+    html += `<div class="step-item ${cls}">
+      <div class="step-dot">${dot}</div>
+      <div class="step-label">${stepLabels[i]}</div>
+    </div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function showDebrief() {
+  stopTimer();
+  const taken = elapsedSeconds || Math.floor((Date.now() - startTime) / 1000);
+  document.getElementById('time-taken').textContent = formatElapsed(taken);
+  renderStepIndicator(TOTAL_STEPS);
+  launchDebriefConfetti();
+}
+
+// ======= CONFETTI =======
+function launchConfetti(count = 100) {
+  const wrap = document.createElement('div');
+  wrap.className = 'confetti-wrap';
+  document.body.appendChild(wrap);
+  const colors = ['#534AB7','#1D9E75','#F5A623','#E24B4A','#4ECDC4','#FFE66D'];
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = `left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.8}s`;
+    wrap.appendChild(p);
+  }
+  setTimeout(() => wrap.remove(), 4000);
+}
+
+function launchDebriefConfetti() {
+  launchConfetti(160);
+  setTimeout(() => launchConfetti(120), 1000);
+  setTimeout(() => launchConfetti(80), 2200);
+}
+
+// ======= TAP-TO-PLACE (iOS / mobile alternative to drag-drop) =======
+let tapChipEl = null;
+
+document.addEventListener('click', function(ev) {
+  const chip = ev.target.closest('.chip');
+  if (chip && !chip.classList.contains('placed')) {
+    ev.stopPropagation();
+    if (tapChipEl === chip) {
+      chip.classList.remove('tap-sel');
+      tapChipEl = null;
+    } else {
+      if (tapChipEl) tapChipEl.classList.remove('tap-sel');
+      tapChipEl = chip;
+      chip.classList.add('tap-sel');
+      const ds = chip.getAttribute('ondragstart') || '';
+      const m = ds.match(/dragStart\(event,'([^']+)','([^']+)','([^']+)'\)/);
+      if (m) { dragChipId = m[1]; dragChipText = m[2]; dragChipClass = m[3]; }
+    }
+    return;
+  }
+  const zone = ev.target.closest('[ondrop]');
+  if (zone && tapChipEl) {
+    ev.stopPropagation();
+    const dropStr = zone.getAttribute('ondrop') || '';
+    const fakeEv = { preventDefault: () => {} };
+    try { eval(dropStr.replace(/\bevent\b/g, 'fakeEv')); } catch(e) {} // eslint-disable-line no-eval
+    tapChipEl.classList.remove('tap-sel');
+    tapChipEl = null;
+    return;
+  }
+  if (tapChipEl && !chip) {
+    tapChipEl.classList.remove('tap-sel');
+    tapChipEl = null;
+  }
+}, true);
+
+// ======= DRAG HELPERS =======
+function dragStart(event, chipId, chipText, chipClass) {
+  dragChipId = chipId;
+  dragChipText = chipText;
+  dragChipClass = chipClass;
+  event.dataTransfer.effectAllowed = 'move';
+}
+
+function markChipPlaced(chipId, placed) {
+  const el = document.getElementById(chipId);
+  if (!el) return;
+  if (placed) el.classList.add('placed');
+  else el.classList.remove('placed');
+}
+
+function returnChipToPool(chipId, poolId) {
+  const chip = document.getElementById(chipId);
+  const pool = document.getElementById(poolId);
+  if (chip && pool) {
+    chip.classList.remove('placed');
+    pool.appendChild(chip);
+  }
+}
+
+// ======= STAGE 1a: HOTSPOT DROP =======
+function dropHotspot1a(event, zoneId, correctChipId) {
+  event.preventDefault();
+  const zone = document.getElementById(zoneId);
+  zone.classList.remove('drag-over');
+
+  if (hz1aPlaced[zoneId]) return; // already filled
+
+  if (dragChipId === correctChipId) {
+    hz1aPlaced[zoneId] = true;
+    hz1aRight++;
+    markChipPlaced(dragChipId, true);
+    zone.classList.add('correct-zone');
+    zone.textContent = dragChipText;
+    updateScore1a();
+    checkAll1a();
+  } else {
+    hz1aWrong++;
+    zone.classList.add('wrong-zone');
+    setTimeout(() => zone.classList.remove('wrong-zone'), 700);
+    updateScore1a();
+  }
+}
+
+function updateScore1a() {
+  const st = document.getElementById('score-1a');
+  if (hz1aRight > 0 || hz1aWrong > 0) st.style.display = 'inline-flex';
+  document.getElementById('correct-1a').textContent = hz1aRight;
+  document.getElementById('wrong-1a').textContent = hz1aWrong;
+}
+
+function checkAll1a() {
+  if (Object.values(hz1aPlaced).every(v => v)) {
+    document.getElementById('btn-s1').disabled = false;
+    launchConfetti(60);
+  }
+}
+
+// ======= STAGE 1b: FUNCTION DRAG-DROP =======
+function dropFunc(event, colId, allowedChipIds) {
+  event.preventDefault();
+  const col = document.getElementById(colId);
+  col.classList.remove('drag-over');
+
+  if (!allowedChipIds.includes(dragChipId)) {
+    // Wrong column — bounce back
+    col.classList.add('wrong-zone');
+    setTimeout(() => col.classList.remove('wrong-zone'), 600);
+    return;
+  }
+
+  if (funcPlaced[dragChipId]) return; // already placed
+
+  // Correct
+  funcPlaced[dragChipId] = colId;
+  markChipPlaced(dragChipId, true);
+
+  const placedEl = document.createElement('div');
+  placedEl.className = 'placed-chip ' + dragChipClass + ' correct-placed';
+  placedEl.textContent = dragChipText;
+  col.appendChild(placedEl);
+  col.classList.add('correct-zone');
+
+  checkAllFunc();
+}
+
+function checkAllFunc() {
+  if (Object.keys(funcPlaced).length === TOTAL_FUNC_CHIPS) {
+    document.getElementById('btn-s2').disabled = false;
+    document.getElementById('summary-1b').classList.add('show');
+    launchConfetti(60);
+  }
+}
+
+// ======= MCQ =======
+function answerMCQ(stage, btn, isCorrect, wrongFeedback) {
+  const group = document.getElementById('mcq-' + stage);
+  const btns = group.querySelectorAll('.mcq-btn');
+  btns.forEach(b => b.disabled = true);
+
+  if (isCorrect) {
+    btn.classList.add('correct-ans');
+    document.getElementById('exp-' + stage).classList.add('show');
+    document.getElementById('btn-s' + stageToScreen(stage)).disabled = false;
+    launchConfetti(40);
+  } else {
+    btn.classList.add('wrong-ans');
+    if (wrongFeedback) btn.textContent = btn.textContent + ' — ' + wrongFeedback;
+    // Show correct (the correct button has isCorrect=true in its onclick)
+    btns.forEach(b => {
+      const onc = b.getAttribute('onclick') || '';
+      if (onc.includes(',true,')) b.classList.add('correct-ans');
+    });
+    document.getElementById('exp-' + stage).classList.add('show');
+    document.getElementById('btn-s' + stageToScreen(stage)).disabled = false;
+  }
+}
+
+function stageToScreen(stage) {
+  // '2a'→3, '2b'→4
+  if (stage === '2a') return 3;
+  if (stage === '2b') return 4;
+  return 0;
+}
+
+// ======= STAGE LINGO DROP =======
+function dropLingo(event, zoneId, correctChipId) {
+  event.preventDefault();
+  const zone = document.getElementById(zoneId);
+  zone.classList.remove('drag-over');
+
+  if (lingoPlaced[zoneId]) return;
+
+  if (dragChipId === correctChipId) {
+    lingoPlaced[zoneId] = dragChipId;
+    markChipPlaced(dragChipId, true);
+    zone.classList.add('correct-zone');
+
+    const chipContainer = document.getElementById('lzc-' + zoneId.slice(3));
+    const placedEl = document.createElement('div');
+    placedEl.className = 'placed-chip label-chip correct-placed';
+    placedEl.textContent = dragChipText;
+    chipContainer.appendChild(placedEl);
+
+    checkAllLingo();
+  } else {
+    zone.classList.add('wrong-zone');
+    setTimeout(() => zone.classList.remove('wrong-zone'), 600);
+  }
+}
+
+function checkAllLingo() {
+  if (Object.keys(lingoPlaced).length === 5) {
+    document.getElementById('btn-s5').disabled = false;
+    document.getElementById('summary-lingo').classList.add('show');
+    launchConfetti(60);
+  }
+}
+
+// ======= STAGE 4: CARD FLIP =======
+const DIAG_OPTIONS = [
+  'Transverse Cord Lesion',
+  'Left Hemicord Lesion (Brown-Séquard)',
+  'Right Hemicord Lesion (Brown-Séquard)',
+  'Small Central Cord Lesion',
+  'Large Central Cord Lesion',
+  'Anterior Cord Lesion',
+  'Posterior Cord Lesion (Cervical)',
+  'Posterior Cord Lesion (Thoracic)'
+];
+
+const ROUNDS = [
+  {
+    cards: [
+      { front: 'images/motor-exam-card.png', back: 'images/motor-paraplegia.png' },
+      { front: 'images/pain-temp-card.png', back: 'images/pain-para-deficit.png' },
+      { front: 'images/vibration-proprioception-card.png', back: 'images/vibration-para-deficit.png' }
+    ],
+    answer: 'Transverse Cord Lesion',
+    pearl: null,
+    explainImg: null
+  },
+  {
+    cards: [
+      { front: 'images/motor-exam-card.png', back: 'images/motor-left-leg.png' },
+      { front: 'images/pain-temp-card.png', back: 'images/pain-right-leg.png' },
+      { front: 'images/vibration-proprioception-card.png', back: 'images/vibration-left-leg.png' }
+    ],
+    answer: 'Left Hemicord Lesion (Brown-Séquard)',
+    pearl: 'Earlier we covered how the spinothalamic tract crosses over upon entry to the spinal cord whilst the dorsal column and corticospinal tracts cross over in the medulla. This diagram illustrates how a lesion involving half of the spinal cord will affect all three pathways — but the spinothalamic tract will be carrying fibres from the <strong>opposite side of the body</strong> as compared to the other tracts affected.',
+    explainImg: 'images/brown-sequard-diagram-explain.png'
+  },
+  {
+    cards: [
+      { front: 'images/motor-exam-card.png', back: 'images/motor-normal.png' },
+      { front: 'images/pain-temp-card.png', back: 'images/pain-cape.png' },
+      { front: 'images/vibration-proprioception-card.png', back: 'images/vibration-normal.png' }
+    ],
+    answer: 'Small Central Cord Lesion',
+    pearl: 'Central cord lesions affect pain and temperature first and foremost because the <strong>spinothalamic tracts</strong> crossover in this central part of the cord. As the lesion becomes bigger it will start to involve other tracts (dorsal column involvement tends to be a late feature). A common reason for a central cord lesion is <strong>syringomyelia</strong>.',
+    explainImg: null
+  },
+  {
+    cards: [
+      { front: 'images/motor-exam-card.png', back: 'images/motor-paraplegia.png' },
+      { front: 'images/pain-temp-card.png', back: 'images/pain-para-deficit.png' },
+      { front: 'images/vibration-proprioception-card.png', back: 'images/vibration-normal.png' }
+    ],
+    answer: 'Anterior Cord Lesion',
+    pearl: '<strong>Incontinence</strong> is a common feature of anterior cord problems.',
+    explainImg: null
+  },
+  {
+    cards: [
+      { front: 'images/motor-exam-card.png', back: 'images/motor-normal.png' },
+      { front: 'images/pain-temp-card.png', back: 'images/pain-normal.png' },
+      { front: 'images/vibration-proprioception-card.png', back: 'images/vibration-para-deficit.png' }
+    ],
+    answer: 'Posterior Cord Lesion',
+    pearl: 'This pattern of myelopathy has many potential causes — but it\'s worth pointing out that THIS is the pattern associated with <strong>B12 deficiency</strong> and <strong>Tertiary Syphilis (tabes dorsalis)</strong>, in addition to other things like compression, trauma, or multiple sclerosis.',
+    explainImg: null
+  }
+];
+
+let currentRound = 0;
+let cardsFlippedEver = [false, false, false];
+let cardsShowingBack = [false, false, false];
+let diagAnswered = false;
+let shuffledRounds = [];
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function initRound(r) {
+  currentRound = r;
+  cardsFlippedEver = [false, false, false];
+  cardsShowingBack = [false, false, false];
+  diagAnswered = false;
+
+  // Update badge and pips
+  document.getElementById('round-badge').textContent = 'Round ' + (r + 1) + ' of 5';
+  for (let i = 0; i < 5; i++) {
+    const pip = document.getElementById('pip-' + i);
+    pip.className = 'round-pip' + (i < r ? ' done' : i === r ? ' active' : '');
+  }
+
+  // Set card images
+  const round = shuffledRounds[r];
+  for (let c = 0; c < 3; c++) {
+    document.getElementById('flip-front-' + c).src = round.cards[c].front;
+    document.getElementById('flip-back-' + c).src = round.cards[c].back;
+    document.getElementById('flip-' + c).classList.remove('flipped');
+    const btn = document.getElementById('flip-btn-' + c);
+    btn.disabled = (c > 0);
+    btn.textContent = '🔍 Flip';
+    btn.className = 'flip-btn';
+  }
+
+  // Hide diagnosis section
+  document.getElementById('diag-section').classList.remove('show');
+  document.getElementById('diag-options').innerHTML = '';
+  document.getElementById('diag-pearl').classList.remove('show');
+  document.getElementById('diag-pearl').innerHTML = '';
+  document.getElementById('round-next-btn').classList.remove('show');
+}
+
+function flipCard(cardIndex) {
+  // Don't allow flipping card N until card N-1 has been flipped at least once
+  if (cardIndex > 0 && !cardsFlippedEver[cardIndex - 1]) return;
+
+  // Toggle current state
+  cardsShowingBack[cardIndex] = !cardsShowingBack[cardIndex];
+  const inner = document.getElementById('flip-' + cardIndex);
+  inner.classList.toggle('flipped', cardsShowingBack[cardIndex]);
+
+  const btn = document.getElementById('flip-btn-' + cardIndex);
+  if (cardsShowingBack[cardIndex]) {
+    btn.textContent = '↩ Flip Back';
+    btn.classList.add('flipped-done');
+  } else {
+    btn.textContent = '🔍 Flip';
+    btn.classList.remove('flipped-done');
+  }
+
+  // First time this card is flipped to the back
+  if (cardsShowingBack[cardIndex] && !cardsFlippedEver[cardIndex]) {
+    cardsFlippedEver[cardIndex] = true;
+    // Unlock next card
+    if (cardIndex < 2) {
+      document.getElementById('flip-btn-' + (cardIndex + 1)).disabled = false;
+    }
+    // All cards seen for the first time?
+    if (cardsFlippedEver.every(v => v)) {
+      setTimeout(showDiagSection, 400);
+    }
+  }
+}
+
+function showDiagSection() {
+  const diagSec = document.getElementById('diag-section');
+  diagSec.classList.add('show');
+
+  const optionsEl = document.getElementById('diag-options');
+  optionsEl.innerHTML = '';
+  const round = shuffledRounds[currentRound];
+
+  DIAG_OPTIONS.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'diag-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectDiag(btn, opt, round);
+    optionsEl.appendChild(btn);
+  });
+}
+
+function selectDiag(btn, selected, round) {
+  if (diagAnswered) return;
+
+  const allBtns = document.querySelectorAll('.diag-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  // Check correctness — round 5 both posterior options count
+  let isCorrect = selected === round.answer ||
+    (round.answer === 'Posterior Cord Lesion' && selected.startsWith('Posterior Cord Lesion'));
+
+  if (isCorrect) {
+    btn.classList.add('correct-ans');
+    diagAnswered = true;
+    showDiagPearl(round);
+    launchConfetti(50);
+  } else {
+    btn.classList.add('wrong-ans');
+    // Highlight correct
+    allBtns.forEach(b => {
+      if (b.textContent === round.answer ||
+          (round.answer === 'Posterior Cord Lesion' && b.textContent.startsWith('Posterior Cord Lesion'))) {
+        b.classList.add('correct-ans');
+      }
+    });
+    diagAnswered = true;
+    showDiagPearl(round);
+  }
+}
+
+function showDiagPearl(round) {
+  const pearlEl = document.getElementById('diag-pearl');
+  if (round.pearl || round.explainImg) {
+    let html = '';
+    if (round.pearl) html += round.pearl;
+    if (round.explainImg) html += `<img src="${round.explainImg}" alt="Explanation diagram">`;
+    pearlEl.innerHTML = html;
+    pearlEl.classList.add('show');
+  }
+
+  const nextBtn = document.getElementById('round-next-btn');
+  if (currentRound < 4) {
+    nextBtn.textContent = 'Next Round →';
+    nextBtn.classList.add('show');
+  } else {
+    // Last round — show complete level button
+    nextBtn.classList.remove('show');
+    setTimeout(() => {
+      document.getElementById('btn-complete').style.display = 'inline-flex';
+      launchConfetti(80);
+    }, 600);
+  }
+}
+
+function nextRound() {
+  initRound(currentRound + 1);
+}
+
+</script>
+</body>
+</html>
